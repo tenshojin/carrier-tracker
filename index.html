@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>船社追踪一键查</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CclipPath id='r'%3E%3Crect width='64' height='64' rx='14'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23r)'%3E%3Crect width='64' height='64' fill='%2315314A'/%3E%3Crect x='10' y='14' width='44' height='26' rx='2.5' fill='%23E0693F'/%3E%3Cg fill='%23A9431F'%3E%3Crect x='15.5' y='17.5' width='2.6' height='19'/%3E%3Crect x='22.5' y='17.5' width='2.6' height='19'/%3E%3Crect x='29.5' y='17.5' width='2.6' height='19'/%3E%3Crect x='36.5' y='17.5' width='2.6' height='19'/%3E%3Crect x='43.5' y='17.5' width='2.6' height='19'/%3E%3C/g%3E%3Cpath d='M-4 51 Q4 45 12 51 T28 51 T44 51 T60 51 T76 51 V70 H-4 Z' fill='%231F6F86'/%3E%3Cpath d='M-4 51 Q4 45 12 51 T28 51 T44 51 T60 51 T76 51' fill='none' stroke='%237FC8E0' stroke-width='3'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Saira+Stencil+One&display=swap">
@@ -19,7 +20,8 @@
   })();
 </script>
 <style>
-  /* Layout: one operating column, like a terminal gate desk — number input on top, readout directly below, query log and carrier register underneath. */
+  /* Layout: a navy harbour band (brand row, headline, small ship on the water) that the input desk overlaps;
+     below it one working column — readout, recent lookups, then the searchable carrier directory. */
   :root {
     --bg: #EDF1F3;
     --surface: #FFFFFF;
@@ -28,10 +30,11 @@
     --muted: #5A6A74;
     --line: #D4DCE1;
     --band: #15314A;
+    --band-2: #1B3C58;
     --band-ink: #EAF2F7;
+    --band-accent: #F4A27C;
     --accent: #C4502B;
     --accent-ink: #FFFFFF;
-    --accent-soft: #F6E0D6;
     --focus: #1F7A96;
     --ok: #2C7A4C;
     --ok-soft: #DDF0E3;
@@ -42,11 +45,9 @@
     --shadow: rgba(19, 35, 46, .28);
     --box-shade: rgba(0, 0, 0, .22);
 
-    --c-maersk: #3A8BBF;
-    --c-hapag: #E06D27;
-    --c-cma: #24457E;
-    --c-msc: #B9942C;
-    --c-wanhai: #2F8B68;
+    /* container paint colours, used for carrier badges and the ship's stack */
+    --p1: #3A8BBF; --p2: #E06D27; --p3: #24457E; --p4: #B9942C; --p5: #2F8B68;
+    --p6: #B0382B; --p7: #6A4C93; --p8: #1F8A8A; --p9: #7D6A52; --p10: #C2457C;
     --c-none: #8D9AA3;
 
     --sky1: #A9DAEA;
@@ -65,7 +66,10 @@
     --window: #2C4A60;
     --smoke: #C9D3D9;
     --intro-ink: #13324A;
-    --k1: #C4502B; --k2: #2F8B68; --k3: #D9A33A; --k4: #3A6FB0; --k5: #8C3B3B; --k6: #6E7F8A;
+    --art-hull: #DCE6EC;
+    --art-hull-top: #F6FAFC;
+    --art-sea: #24557A;
+    --art-crest: rgba(160, 214, 236, .7);
 
     --font-display: "Saira Stencil One", "Arial Narrow", Impact, sans-serif;
     --font-body: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
@@ -76,27 +80,29 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #0C161D; --surface: #13212B; --surface-2: #182A36; --ink: #E2EBF0; --muted: #93A5B0; --line: #253945;
-      --band: #0F2638; --band-ink: #E2EEF5; --accent: #E0693F; --accent-ink: #FFFFFF; --accent-soft: #3A231A;
+      --band: #0F2638; --band-2: #143049; --band-ink: #E2EEF5; --accent: #E0693F; --accent-ink: #FFFFFF;
       --focus: #5BB4D0; --ok: #6CC795; --ok-soft: #173326; --warn: #E2B25A; --warn-soft: #36290F; --bad: #F08A7C; --bad-soft: #3B1C18;
       --shadow: rgba(0, 0, 0, .6); --box-shade: rgba(0, 0, 0, .3);
-      --c-maersk: #4FA1D4; --c-hapag: #EE8240; --c-cma: #4A6FB0; --c-msc: #CCA640; --c-wanhai: #3FA37E; --c-none: #6D7C86;
+      --p1: #4FA1D4; --p2: #EE8240; --p3: #4A6FB0; --p4: #CCA640; --p5: #3FA37E;
+      --p6: #D4594B; --p7: #8F70BA; --p8: #33A6A6; --p9: #A08868; --p10: #D9619A; --c-none: #6D7C86;
       --sky1: #0B1D2E; --sky2: #1F4560; --sun: #EDE6C9; --sun-glow: rgba(237, 230, 201, .25); --cloud: #2E4C62;
       --sea1: #1E5672; --sea2: #133F57; --sea3: #0B2B3D; --foam: rgba(210, 232, 243, .45);
       --hull: #2F4B64; --hull-top: #45657F; --house: #D5DDE2; --house-roof: #A9B6BE; --window: #F2D27C; --smoke: #6F8796;
-      --intro-ink: #E6F0F6;
+      --intro-ink: #E6F0F6; --art-sea: #1A4462;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #0C161D; --surface: #13212B; --surface-2: #182A36; --ink: #E2EBF0; --muted: #93A5B0; --line: #253945;
-    --band: #0F2638; --band-ink: #E2EEF5; --accent: #E0693F; --accent-ink: #FFFFFF; --accent-soft: #3A231A;
+    --band: #0F2638; --band-2: #143049; --band-ink: #E2EEF5; --accent: #E0693F; --accent-ink: #FFFFFF;
     --focus: #5BB4D0; --ok: #6CC795; --ok-soft: #173326; --warn: #E2B25A; --warn-soft: #36290F; --bad: #F08A7C; --bad-soft: #3B1C18;
     --shadow: rgba(0, 0, 0, .6); --box-shade: rgba(0, 0, 0, .3);
-    --c-maersk: #4FA1D4; --c-hapag: #EE8240; --c-cma: #4A6FB0; --c-msc: #CCA640; --c-wanhai: #3FA37E; --c-none: #6D7C86;
+    --p1: #4FA1D4; --p2: #EE8240; --p3: #4A6FB0; --p4: #CCA640; --p5: #3FA37E;
+    --p6: #D4594B; --p7: #8F70BA; --p8: #33A6A6; --p9: #A08868; --p10: #D9619A; --c-none: #6D7C86;
     --sky1: #0B1D2E; --sky2: #1F4560; --sun: #EDE6C9; --sun-glow: rgba(237, 230, 201, .25); --cloud: #2E4C62;
     --sea1: #1E5672; --sea2: #133F57; --sea3: #0B2B3D; --foam: rgba(210, 232, 243, .45);
     --hull: #2F4B64; --hull-top: #45657F; --house: #D5DDE2; --house-roof: #A9B6BE; --window: #F2D27C; --smoke: #6F8796;
-    --intro-ink: #E6F0F6;
+    --intro-ink: #E6F0F6; --art-sea: #1A4462;
     color-scheme: dark;
   }
 
@@ -110,7 +116,7 @@
     font: 15px/1.6 var(--font-body);
   }
   .gutter {
-    max-width: 880px;
+    max-width: 920px;
     margin: 0 auto;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -118,38 +124,73 @@
   :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
   /* ---------- header band ---------- */
-  .band { background: var(--band); color: var(--band-ink); }
-  .band .gutter { padding-block: 16px 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+  .band {
+    background:
+      radial-gradient(120% 140% at 85% 0%, var(--band-2), transparent 60%),
+      var(--band);
+    color: var(--band-ink);
+  }
+  .band-top {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap;
+    padding-block: 18px 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--band-ink) 12%, transparent);
+  }
   .brand { display: flex; align-items: center; gap: 12px; }
-  .brand-mark { width: 40px; height: 26px; flex: none; }
-  .brand h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: .03em; line-height: 1.2; }
-  .brand .tag { display: block; font-family: var(--font-display); font-size: 12px; letter-spacing: .22em; opacity: .7; }
-  .band-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  .band-meta { font-size: 13px; opacity: .78; }
+  .brand-mark { width: 36px; height: 36px; flex: none; border-radius: 9px; }
+  .brand-name { display: block; font-size: 16px; font-weight: 700; letter-spacing: .02em; line-height: 1.25; }
+  .brand .tag { display: block; font-family: var(--font-display); font-size: 11px; letter-spacing: .24em; opacity: .65; }
   .lang {
     display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--band-ink) 28%, transparent);
   }
   .lang button {
     background: transparent; color: var(--band-ink); border: 0; cursor: pointer;
-    padding: 4px 11px; border-radius: 999px; font: 500 13px/1.3 var(--font-body);
+    padding: 5px 12px; border-radius: 999px; font: 500 13px/1.3 var(--font-body);
   }
   .lang button:hover { background: color-mix(in srgb, var(--band-ink) 12%, transparent); }
   .lang button[aria-pressed="true"] { background: var(--band-ink); color: var(--band); }
-  .band-wave { display: block; width: 100%; height: 12px; }
+
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 40px; align-items: end;
+    padding-block: 38px 92px;
+  }
+  .hero h1 { margin: 0; font-size: clamp(26px, 3.7vw, 40px); line-height: 1.2; font-weight: 700; letter-spacing: .01em; text-wrap: balance; max-width: 16em; }
+  .lede { margin: 12px 0 0; font-size: 15.5px; line-height: 1.7; max-width: 38em; opacity: .84; }
+  .facts { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .facts li {
+    font-size: 13px; padding: 5px 13px; border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--band-ink) 22%, transparent);
+    background: color-mix(in srgb, var(--band-ink) 6%, transparent);
+  }
+  .facts b { color: var(--band-accent); font-family: var(--font-mono); font-weight: 600; margin-right: 2px; }
+
+  .hero-art { position: relative; width: 270px; height: 150px; margin-bottom: -6px; }
+  .hero-art .ship { position: absolute; left: 22px; bottom: 26px; width: 225px; height: auto; transform-origin: 50% 82%; animation: bob 3.2s ease-in-out infinite alternate; }
+  .hero-art .ship .hull { fill: var(--art-hull); }
+  .hero-art .ship .hull-top { fill: var(--art-hull-top); }
+  .hero-art .sea {
+    position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 44px;
+    -webkit-mask-image: radial-gradient(ellipse 58% 120% at 50% 0%, #000 55%, transparent 100%);
+    mask-image: radial-gradient(ellipse 58% 120% at 50% 0%, #000 55%, transparent 100%);
+  }
+  .hero-art .sea .fill { fill: var(--art-sea); }
+  .hero-art .sea .crest { fill: none; stroke: var(--art-crest); stroke-width: 1.6; }
+
+  .band-wave { display: block; width: 100%; height: 14px; margin-top: -1px; }
   .band-wave path { fill: var(--band); }
 
-  main.gutter { padding-block: 22px 40px; display: grid; gap: 30px; }
+  main.gutter { padding-block: 0 40px; display: grid; gap: 34px; }
 
   /* ---------- input desk ---------- */
   .desk {
+    position: relative; margin-top: -78px;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 20px;
+    border-radius: 16px;
+    padding: 22px;
     display: grid;
     gap: 14px;
-    box-shadow: 0 18px 36px -26px var(--shadow);
+    box-shadow: 0 24px 44px -28px var(--shadow);
   }
   .desk-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
   .desk-label label { font-weight: 700; font-size: 15px; }
@@ -188,11 +229,7 @@
   .linkish { background: none; border: 0; padding: 0; color: var(--focus); font: inherit; font-size: 13.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
   /* ---------- readout ---------- */
-  .readout {
-    border-top: 1px dashed var(--line);
-    padding-top: 16px;
-    display: grid; gap: 12px;
-  }
+  .readout { border-top: 1px dashed var(--line); padding-top: 16px; display: grid; gap: 12px; }
   .ro-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .ro-name { font-size: 17px; font-weight: 700; }
   .pills { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -203,10 +240,7 @@
 
   .num { font: 600 24px/1.3 var(--font-mono); letter-spacing: .06em; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; overflow-wrap: anywhere; }
   .num.sm { font-size: 15px; gap: 6px; }
-  .cd {
-    display: inline-grid; place-items: center; min-width: 1.45em; height: 1.45em; padding: 0 .18em;
-    border: 2px solid currentColor; border-radius: 3px; line-height: 1;
-  }
+  .cd { display: inline-grid; place-items: center; min-width: 1.45em; height: 1.45em; padding: 0 .18em; border: 2px solid currentColor; border-radius: 3px; line-height: 1; }
   .cd.bad { color: var(--bad); }
   .ro-note { margin: 0; font-size: 14px; color: var(--muted); }
   .ro-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -229,7 +263,13 @@
   .chip:hover { border-color: var(--focus); }
   .chip.mono { font-family: var(--font-mono); font-size: 13px; padding-left: 11px; }
 
-  /* mini container badge: the carrier is shown as a painted box */
+  .pick { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .pick select, .dir-tools input {
+    font: 500 14px/1.3 var(--font-body); color: var(--ink); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; max-width: 100%;
+  }
+  .pick select:focus, .dir-tools input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 18%, transparent); }
+
   .badge { display: inline-flex; align-items: center; gap: 8px; }
   .box {
     --c: var(--c-none);
@@ -254,25 +294,36 @@
   .row .who { display: grid; gap: 4px; min-width: 0; }
   .row .name { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; min-width: 0; }
   .row .act { display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
-  .row .chips { grid-column: 1 / -1; }
+  .row .pick, .row .chips { grid-column: 1 / -1; }
   .done-mark { font-size: 12.5px; color: var(--ok); white-space: nowrap; }
 
   /* ---------- sections ---------- */
-  section h2 { margin: 0 0 12px; font-size: 16px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .sec-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  section h2 { margin: 0; font-size: 16px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   section h2 .eyebrow { font-family: var(--font-display); font-weight: 400; font-size: 12px; letter-spacing: .2em; color: var(--muted); }
-  .two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; }
+  .count { font: 600 12px/1.6 var(--font-mono); color: var(--muted); padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; }
+  .fine { font-size: 12.5px; color: var(--muted); margin: 8px 2px 0; }
 
-  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-  .reg { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .reg .pill { white-space: normal; display: inline-block; }
-  .reg th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; letter-spacing: .06em; padding: 9px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
-  .reg td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  .reg tr:last-child td { border-bottom: 0; }
-  .reg .cname { font-weight: 600; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-  .prefixes { font-family: var(--font-mono); font-size: 12px; color: var(--muted); line-height: 1.7; }
-  .prefixes b { font-family: var(--font-body); font-weight: 500; color: var(--ink); font-size: 12px; }
-  .prefixes span { font-family: var(--font-body); }
-  .fine { font-size: 12.5px; color: var(--muted); margin: 10px 2px 0; }
+  .dir-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .dir-tools input { width: 220px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .seg button { border: 0; background: transparent; color: var(--muted); font: 500 13px/1.3 var(--font-body); padding: 8px 11px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); font-weight: 600; }
+
+  .dir { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+  .dir a {
+    display: grid; gap: 6px; height: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none;
+    transition: border-color .12s ease, transform .12s ease;
+  }
+  .dir a:hover { border-color: var(--focus); transform: translateY(-1px); }
+  .card-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .card-top .cname { font-weight: 600; font-size: 14px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .card-pre { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
+  .card-go { font-size: 12.5px; color: var(--focus); }
+  .dir-empty { grid-column: 1 / -1; padding: 16px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 14px; }
+  .dir-more { display: flex; justify-content: center; margin-top: 12px; }
 
   .log { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
   .log li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); }
@@ -284,7 +335,7 @@
   .log-empty { border: 1px dashed var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; font-size: 14px; color: var(--muted); background: var(--surface); }
   .log-tools { display: flex; justify-content: flex-end; margin-top: 8px; }
 
-  footer.gutter { padding-block: 0 36px; display: grid; gap: 12px; font-size: 13px; color: var(--muted); }
+  footer.gutter { padding-block: 0 36px; display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
   footer p { margin: 0; }
   .prefs { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
   .prefs label { display: inline-flex; gap: 7px; align-items: center; cursor: pointer; color: var(--ink); }
@@ -299,6 +350,21 @@
     transition: opacity .2s ease, transform .2s ease;
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- ship drawing (shared by intro and header) ---------- */
+  .ship .hull { fill: var(--hull); }
+  .ship .hull-top { fill: var(--hull-top); }
+  .ship .boot { fill: var(--p6); }
+  .ship .house { fill: var(--house); }
+  .ship .roof { fill: var(--house-roof); }
+  .ship .win { fill: var(--window); }
+  .ship .funnel-band { fill: var(--p2); }
+  .ship .corr-line { fill: var(--box-shade); }
+  .ship .puff { fill: var(--smoke); transform-box: fill-box; transform-origin: center; animation: puff 1.5s ease-out infinite; opacity: 0; }
+  .ship .p2 { animation-delay: .5s; }
+  .ship .p3 { animation-delay: 1s; }
+  @keyframes puff { 0% { opacity: .85; transform: translate(0, 0) scale(.6); } 100% { opacity: 0; transform: translate(-22px, -34px) scale(1.9); } }
+  @keyframes bob { from { transform: translateY(0) rotate(-1.1deg); } to { transform: translateY(5px) rotate(.9deg); } }
 
   /* ---------- intro: a container ship crossing the sea ---------- */
   #intro { display: none; }
@@ -348,20 +414,6 @@
   }
   @keyframes sail { from { transform: translateX(-105%); } to { transform: translateX(calc(100vw + 5%)); } }
   #intro .ship { display: block; width: 100%; height: auto; transform-origin: 50% 82%; animation: bob 1.25s ease-in-out infinite alternate; }
-  @keyframes bob { from { transform: translateY(0) rotate(-1.1deg); } to { transform: translateY(5px) rotate(.9deg); } }
-  #intro .hull { fill: var(--hull); }
-  #intro .hull-top { fill: var(--hull-top); }
-  #intro .boot { fill: var(--k1); }
-  #intro .house { fill: var(--house); }
-  #intro .roof { fill: var(--house-roof); }
-  #intro .win { fill: var(--window); }
-  #intro .funnel-band { fill: var(--k1); }
-  #intro .corr { fill: url(#corr); }
-  #intro .corr-line { fill: var(--box-shade); }
-  #intro .puff { fill: var(--smoke); transform-box: fill-box; transform-origin: center; animation: puff 1.5s ease-out infinite; opacity: 0; }
-  #intro .p2 { animation-delay: .5s; }
-  #intro .p3 { animation-delay: 1s; }
-  @keyframes puff { 0% { opacity: .85; transform: translate(0, 0) scale(.6); } 100% { opacity: 0; transform: translate(-22px, -34px) scale(1.9); } }
 
   #intro .skip {
     position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
@@ -371,7 +423,12 @@
 
   @media (prefers-reduced-motion: reduce) {
     .intro-on #intro { display: none; }
-    .btn, #toast { transition: none; }
+    .btn, #toast, .dir a { transition: none; }
+    .hero-art .ship { animation: none; }
+  }
+  @media (max-width: 720px) {
+    .hero { grid-template-columns: minmax(0, 1fr); padding-block: 26px 84px; }
+    .hero-art { display: none; }
   }
   @media (max-width: 520px) {
     .desk { padding: 16px; }
@@ -379,6 +436,8 @@
     .row { grid-template-columns: minmax(0, 1fr) auto; }
     .row .who { grid-column: 1 / -1; }
     .num { font-size: 21px; }
+    .dir-tools input { width: 100%; }
+    .dir-tools { width: 100%; }
   }
 </style>
 
@@ -391,59 +450,54 @@
   <div class="title"><b data-i18n="appName">Carrier Tracker</b><span data-i18n="tag">ONE-CLICK LOOKUP</span></div>
   <div class="wave w-back"><svg viewBox="0 0 1600 100" preserveAspectRatio="none"><path d="M0 18 Q100 4 200 18 T400 18 T600 18 T800 18 T1000 18 T1200 18 T1400 18 T1600 18 V100 H0 Z"/></svg></div>
   <div class="wave w-mid"><svg viewBox="0 0 1600 100" preserveAspectRatio="none"><path d="M0 22 Q100 8 200 22 T400 22 T600 22 T800 22 T1000 22 T1200 22 T1400 22 T1600 22 V100 H0 Z"/></svg></div>
-  <div class="ship-track">
-    <svg class="ship" viewBox="0 0 360 170" aria-hidden="true">
-      <defs>
-        <pattern id="corr" width="4" height="20" patternUnits="userSpaceOnUse"><rect class="corr-line" x="3" width="1" height="20"/></pattern>
-      </defs>
-      <circle class="puff p1" cx="50" cy="28" r="7"/>
-      <circle class="puff p2" cx="50" cy="28" r="6"/>
-      <circle class="puff p3" cx="50" cy="28" r="5"/>
-      <rect class="house" x="42" y="32" width="16" height="28" rx="2"/>
-      <rect class="funnel-band" x="42" y="38" width="16" height="6"/>
-      <rect class="house" x="26" y="60" width="44" height="50" rx="2"/>
-      <rect class="roof" x="21" y="57" width="54" height="6" rx="1"/>
-      <g>
-        <rect class="win" x="31" y="68" width="7" height="5" rx="1"/>
-        <rect class="win" x="41" y="68" width="7" height="5" rx="1"/>
-        <rect class="win" x="51" y="68" width="7" height="5" rx="1"/>
-        <rect class="win" x="61" y="68" width="5" height="5" rx="1"/>
-        <rect class="win" x="31" y="80" width="7" height="5" rx="1"/>
-        <rect class="win" x="41" y="80" width="7" height="5" rx="1"/>
-        <rect class="win" x="51" y="80" width="7" height="5" rx="1"/>
-      </g>
-      <g id="stack"></g>
-      <path class="hull" d="M12 108 H352 L334 150 H38 Q21 146 12 108 Z"/>
-      <rect class="hull-top" x="12" y="106" width="340" height="4"/>
-      <path class="boot" d="M30 140 H338 L334 150 H38 Q33 147 30 140 Z"/>
-    </svg>
-  </div>
+  <div class="ship-track"><svg class="ship" id="introShip" viewBox="0 0 360 170"></svg></div>
   <div class="wave w-front"><svg viewBox="0 0 1600 100" preserveAspectRatio="none"><path class="fill" d="M0 26 Q100 12 200 26 T400 26 T600 26 T800 26 T1000 26 T1200 26 T1400 26 T1600 26 V100 H0 Z"/><path class="crest" d="M0 26 Q100 12 200 26 T400 26 T600 26 T800 26 T1000 26 T1200 26 T1400 26 T1600 26"/></svg></div>
   <button class="skip" type="button" id="skipIntro" data-i18n="skip">Skip ›</button>
 </div>
 
 <header class="band">
-  <div class="gutter">
+  <div class="gutter band-top">
     <div class="brand">
-      <svg class="brand-mark" viewBox="0 0 40 26" aria-hidden="true">
-        <rect x="1" y="1" width="38" height="24" rx="2" fill="var(--accent)"/>
-        <g fill="var(--box-shade)"><rect x="6" y="4" width="2" height="18"/><rect x="11" y="4" width="2" height="18"/><rect x="16" y="4" width="2" height="18"/><rect x="21" y="4" width="2" height="18"/><rect x="26" y="4" width="2" height="18"/><rect x="31" y="4" width="2" height="18"/></g>
+      <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <defs><clipPath id="bmClip"><rect width="64" height="64" rx="14"/></clipPath></defs>
+        <g clip-path="url(#bmClip)">
+          <rect width="64" height="64" fill="var(--band-2)"/>
+          <rect x="10" y="14" width="44" height="26" rx="2.5" fill="var(--accent)"/>
+          <g fill="var(--box-shade)"><rect x="15.5" y="17.5" width="2.6" height="19"/><rect x="22.5" y="17.5" width="2.6" height="19"/><rect x="29.5" y="17.5" width="2.6" height="19"/><rect x="36.5" y="17.5" width="2.6" height="19"/><rect x="43.5" y="17.5" width="2.6" height="19"/></g>
+          <path d="M-4 51 Q4 45 12 51 T28 51 T44 51 T60 51 T76 51 V70 H-4 Z" fill="var(--art-sea)"/>
+          <path d="M-4 51 Q4 45 12 51 T28 51 T44 51 T60 51 T76 51" fill="none" stroke="var(--art-crest)" stroke-width="3"/>
+        </g>
       </svg>
       <div>
-        <h1 data-i18n="appName">Carrier Tracker</h1>
+        <span class="brand-name" data-i18n="appName">Carrier Tracker</span>
         <span class="tag" data-i18n="tag">ONE-CLICK LOOKUP</span>
       </div>
     </div>
-    <div class="band-right">
-      <span class="band-meta" data-i18n="bandMeta">MBL / container no. → carrier detected → official site</span>
-      <div class="lang" role="group" aria-label="Language">
-        <button type="button" data-lang="en">EN</button>
-        <button type="button" data-lang="ja">日本語</button>
-        <button type="button" data-lang="zh">中文</button>
-      </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="ja">日本語</button>
+      <button type="button" data-lang="zh">中文</button>
     </div>
   </div>
-  <svg class="band-wave" viewBox="0 0 1600 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 V5 Q50 12 100 5 T200 5 T300 5 T400 5 T500 5 T600 5 T700 5 T800 5 T900 5 T1000 5 T1100 5 T1200 5 T1300 5 T1400 5 T1500 5 T1600 5 V0 Z"/></svg>
+  <div class="gutter hero">
+    <div>
+      <h1 data-i18n="heroTitle">Paste a number, reach the carrier</h1>
+      <p class="lede" data-i18n="heroLede"></p>
+      <ul class="facts">
+        <li id="factCarriers"></li>
+        <li id="factAuto"></li>
+        <li data-i18n="factTypes"></li>
+      </ul>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg class="ship" id="heroShip" viewBox="0 0 360 170"></svg>
+      <svg class="sea" viewBox="0 0 270 44" preserveAspectRatio="none">
+        <path class="fill" d="M0 10 Q17 3 34 10 T68 10 T102 10 T136 10 T170 10 T204 10 T238 10 T272 10 V44 H0 Z"/>
+        <path class="crest" d="M0 10 Q17 3 34 10 T68 10 T102 10 T136 10 T170 10 T204 10 T238 10 T272 10"/>
+      </svg>
+    </div>
+  </div>
+  <svg class="band-wave" viewBox="0 0 1600 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 V6 Q50 14 100 6 T200 6 T300 6 T400 6 T500 6 T600 6 T700 6 T800 6 T900 6 T1000 6 T1100 6 T1200 6 T1300 6 T1400 6 T1500 6 T1600 6 V0 Z"/></svg>
 </header>
 
 <main class="gutter">
@@ -459,23 +513,30 @@
     <div id="readout" class="readout" aria-live="polite"></div>
   </div>
 
-  <div class="two">
-    <section aria-labelledby="logTitle">
+  <section aria-labelledby="logTitle">
+    <div class="sec-head">
       <h2 id="logTitle"><span data-i18n="logTitle">Recent lookups</span> <span class="eyebrow">LOG</span></h2>
-      <div id="logBox"></div>
-    </section>
+    </div>
+    <div id="logBox"></div>
+  </section>
 
-    <section aria-labelledby="regTitle">
-      <h2 id="regTitle"><span data-i18n="regTitle">Carriers</span> <span class="eyebrow">REGISTER</span></h2>
-      <div class="table-wrap">
-        <table class="reg">
-          <thead><tr><th data-i18n="th1">Carrier</th><th data-i18n="th2">Detected by</th><th data-i18n="th3">How it opens</th></tr></thead>
-          <tbody id="regBody"></tbody>
-        </table>
+  <section aria-labelledby="dirTitle">
+    <div class="sec-head">
+      <h2 id="dirTitle"><span data-i18n="dirTitle">Supported carriers</span> <span class="count" id="dirCount"></span></h2>
+      <div class="dir-tools">
+        <input type="search" id="dirSearch" data-i18n-ph="dirSearchPh" autocomplete="off">
+        <div class="seg" role="group" aria-label="Filter">
+          <button type="button" data-filter="all" data-i18n="fAll">All</button>
+          <button type="button" data-filter="auto" data-i18n="fAuto">Auto search</button>
+          <button type="button" data-filter="copy" data-i18n="fCopy">Copy &amp; paste</button>
+        </div>
       </div>
-      <p class="fine" data-i18n="lessorFine"></p>
-    </section>
-  </div>
+    </div>
+    <ul class="dir" id="dirList"></ul>
+    <div class="dir-more"><button type="button" class="linkish" id="dirMore"></button></div>
+    <p class="fine" data-i18n="lessorFine"></p>
+    <p class="fine" data-i18n="unverifiedFine"></p>
+  </section>
 </main>
 
 <footer class="gutter">
@@ -491,46 +552,110 @@
 <div id="toast" role="status"></div>
 
 <script id="core">
-/* ---------- carrier rules (pure, testable) ---------- */
-var CARRIERS = {
-  maersk: {
-    id: 'maersk', name: 'Maersk', color: 'var(--c-maersk)', mode: 'auto', verified: true, hasRule: true,
-    cntr: ['MAEU', 'MSKU', 'MRKU', 'MRSU', 'MSFU', 'MNBU', 'MMAU', 'SUDU', 'SEAU'], scac: ['MAEU'],
-    url: function (n) { return 'https://www.maersk.com/tracking/' + encodeURIComponent(n); }
-  },
-  hapag: {
-    id: 'hapag', name: 'Hapag-Lloyd', color: 'var(--c-hapag)', mode: 'auto', verified: false, hasRule: true,
+/* ---------- carrier register (pure data + rules, testable) ----------
+   auto.c / auto.b / auto.k build a link that fills the number in (container / B/L / booking).
+   Carriers without auto open their tracking page and the number is copied for pasting.
+   strip: carrier sites that expect the B/L without its SCAC prefix. */
+function enc(n) { return encodeURIComponent(n); }
+var CARRIERS = [
+  { id: 'maersk', name: 'Maersk', zh: '马士基', p: 1, verified: true,
+    cntr: ['MAEU', 'MSKU', 'MRKU', 'MRSU', 'MSFU', 'MNBU', 'MMAU', 'SUDU', 'SEAU'], scac: ['MAEU', 'SUDU', 'SEAU'], strip: ['MAEU'],
+    page: 'https://www.maersk.com/tracking/',
+    auto: { c: function (n) { return 'https://www.maersk.com/tracking/' + enc(n); }, b: function (n) { return 'https://www.maersk.com/tracking/' + enc(n); } } },
+  { id: 'hapag', name: 'Hapag-Lloyd', zh: '赫伯罗特', p: 2, verified: false,
     cntr: ['HLCU', 'HLXU', 'HLBU', 'UACU'], scac: ['HLCU'],
-    url: function (n, type) {
-      return type === 'container'
-        ? 'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html?container=' + encodeURIComponent(n)
-        : 'https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html?blno=' + encodeURIComponent(n);
-    }
-  },
-  cma: {
-    id: 'cma', name: 'CMA CGM', color: 'var(--c-cma)', mode: 'copy', hasRule: true,
-    cntr: ['CMAU', 'CGMU', 'ECMU', 'AMCU'], scac: ['CMDU'],
-    page: 'https://www.cma-cgm.com/ebusiness/tracking'
-  },
-  msc: {
-    id: 'msc', name: 'MSC', color: 'var(--c-msc)', mode: 'copy',
-    cntr: ['MSCU', 'MEDU', 'MSDU', 'MSMU'], scac: ['MEDU', 'MSCU'],
-    page: 'https://www.msc.com/en/track-a-shipment'
-  },
-  wanhai: {
-    id: 'wanhai', name: 'Wan Hai', color: 'var(--c-wanhai)', mode: 'copy',
-    cntr: ['WHLU', 'WHSU'], scac: ['WHLC'],
-    page: 'https://www.wanhai.com/views/cargo_track_v2/tracking_query.xhtml'
-  }
-};
-var ORDER = ['maersk', 'hapag', 'cma', 'msc', 'wanhai'];
+    page: 'https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html',
+    auto: { c: function (n) { return 'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html?container=' + enc(n); },
+            b: function (n) { return 'https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html?blno=' + enc(n); } } },
+  { id: 'cma', name: 'CMA CGM', zh: '达飞', p: 3, cntr: ['CMAU', 'CGMU', 'ECMU', 'AMCU'], scac: ['CMDU'],
+    page: 'https://www.cma-cgm.com/ebusiness/tracking' },
+  { id: 'msc', name: 'MSC', zh: '地中海航运', p: 4, cntr: ['MSCU', 'MEDU', 'MSDU', 'MSMU'], scac: ['MEDU', 'MSCU'],
+    page: 'https://www.msc.com/en/track-a-shipment', tip: 'tip_msc' },
+  { id: 'wanhai', name: 'Wan Hai', zh: '万海', p: 8, cntr: ['WHLU', 'WHSU'], scac: ['WHLC'], strip: ['WHLC'],
+    page: 'https://www.wanhai.com/views/cargo_track_v2/tracking_query.xhtml', tip: 'tip_wanhai' },
+  { id: 'one', name: 'ONE', zh: '海洋网联', p: 10, verified: true,
+    cntr: ['ONEU', 'NYKU', 'KKFU', 'KKLU', 'KKTU', 'MOLU', 'MOFU', 'MOAU'], scac: ['ONEY'], strip: ['ONEY'],
+    page: 'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking',
+    auto: { c: function (n) { return 'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?trakNoParam=' + enc(n) + '&trakNoTpCdParam=C'; },
+            b: function (n) { return 'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking?trakNoParam=' + enc(n) + '&trakNoTpCdParam=B'; } } },
+  { id: 'evergreen', name: 'Evergreen', zh: '长荣', p: 5, cntr: ['EGHU', 'EISU', 'EITU', 'EGSU', 'EMCU', 'HMCU'], scac: ['EGLV'], strip: ['EGLV'],
+    page: 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do', tip: 'tip_evergreen' },
+  { id: 'cosco', name: 'COSCO', zh: '中远海运', p: 3, verified: true,
+    cntr: ['COSU', 'CBHU', 'CCLU', 'CSNU'], scac: ['COSU'], strip: ['COSU'],
+    page: 'https://elines.coscoshipping.com/ebusiness/cargotracking',
+    auto: { c: function (n) { return 'https://elines.coscoshipping.com/ebusiness/cargotracking?trackingType=CONTAINER&number=' + enc(n); },
+            b: function (n) { return 'https://elines.coscoshipping.com/ebusiness/cargotracking?trackingType=BILLOFLADING&number=' + enc(n); },
+            k: function (n) { return 'https://elines.coscoshipping.com/ebusiness/cargotracking?trackingType=BOOKING&number=' + enc(n); } } },
+  { id: 'oocl', name: 'OOCL', zh: '东方海外', p: 6, cntr: ['OOLU', 'OOCU'], scac: ['OOLU'], strip: ['OOLU'],
+    page: 'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx' },
+  { id: 'yangming', name: 'Yang Ming', zh: '阳明', p: 4, cntr: ['YMLU', 'YMMU'], scac: ['YMLU'], strip: ['YMLU'],
+    page: 'https://www.yangming.com/en/esolution/cargo_tracking' },
+  { id: 'hmm', name: 'HMM', zh: '现代商船', p: 1, cntr: ['HDMU', 'HMMU'], scac: ['HDMU'], strip: ['HDMU'],
+    page: 'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do' },
+  { id: 'zim', name: 'ZIM', zh: '以星', p: 9, verified: false, cntr: ['ZIMU', 'ZCSU'], scac: ['ZIMU'],
+    page: 'https://www.zim.com/tools/track-a-shipment',
+    auto: { c: function (n) { return 'https://www.zim.com/tools/track-a-shipment?consnumber=' + enc(n); },
+            b: function (n) { return 'https://www.zim.com/tools/track-a-shipment?consnumber=' + enc(n); } } },
+  { id: 'pil', name: 'PIL', zh: '太平船务', p: 6, verified: true, cntr: ['PCIU', 'PILU'], scac: ['PCIU'],
+    page: 'https://www.pilship.com/digital-solutions/?tab=customer&id=track-trace&label=containerTandT&module=TrackContStatus',
+    auto: { c: function (n) { return 'https://www.pilship.com/digital-solutions/?tab=customer&id=track-trace&label=containerTandT&module=TrackContStatus&refNo=' + enc(n); } } },
+  { id: 'kmtc', name: 'KMTC', zh: '高丽海运', p: 2, cntr: ['KMTU'], scac: ['KMTC'], strip: ['KMTC'],
+    page: 'https://www.ekmtc.com/index.html#/cargo-tracking' },
+  { id: 'sitc', name: 'SITC', zh: '海丰国际', p: 1, cntr: ['SITU'], scac: ['SITC'],
+    page: 'https://ebusiness.sitcline.com/#/topMenu/cargoTrack' },
+  { id: 'sinokor', name: 'Sinokor', zh: '长锦商船', p: 7, verified: true, cntr: ['SKLU'], scac: ['SNKO'],
+    page: 'https://ebiz.sinokor.co.kr/Tracking',
+    auto: { c: function (n) { return 'https://ebiz.sinokor.co.kr/Tracking?cntrno=' + enc(n); }, b: function (n) { return 'https://ebiz.sinokor.co.kr/Tracking?blno=' + enc(n); } } },
+  { id: 'heunga', name: 'Heung-A', zh: '兴亚海运', p: 5, verified: true, cntr: ['HALU', 'HLHU'], scac: [],
+    page: 'https://ebiz.heungaline.com/Tracking',
+    auto: { c: function (n) { return 'https://ebiz.heungaline.com/Tracking?cntrno=' + enc(n); }, b: function (n) { return 'https://ebiz.heungaline.com/Tracking?blno=' + enc(n); } } },
+  { id: 'tslines', name: 'T.S. Lines', zh: '德翔海运', p: 8, cntr: ['TSLU', 'TSSU', 'TSTU'], scac: [],
+    page: 'https://www.tslines.com/en/tracking' },
+  { id: 'apl', name: 'APL', zh: '美国总统轮船', p: 6, cntr: ['APLU', 'APRU', 'APHU', 'APZU'], scac: ['APLU'],
+    page: 'https://www.apl.com/ebusiness/tracking' },
+  { id: 'anl', name: 'ANL', zh: '澳国航运', p: 9, cntr: ['ANNU'], scac: ['ANNU'],
+    page: 'https://www.anl.com.au/ebusiness/tracking' },
+  { id: 'cnc', name: 'CNC Line', zh: '正利航业', p: 2, cntr: [], scac: [],
+    page: 'https://www.cnc-line.com/ebusiness/tracking' },
+  { id: 'goldstar', name: 'Gold Star Line', zh: '金星航运', p: 4, cntr: ['GOSU'], scac: ['GOSU'],
+    page: 'https://www.goldstarline.com/tools/track_shipment' },
+  { id: 'smline', name: 'SM Line', p: 1, cntr: [], scac: ['SMLM'], strip: ['SMLM'],
+    page: 'https://esvc.smlines.com/smline/CUP_HOM_3301.do' },
+  { id: 'namsung', name: 'Namsung', zh: '南星海运', p: 3, cntr: ['NSRU'], scac: [],
+    page: 'https://ebiz.namsung.co.kr/' },
+  { id: 'dongjin', name: 'Dongjin', zh: '东进商船', p: 10, cntr: [], scac: [],
+    page: 'http://esvc.djship.co.kr/gnoss/CUP_HOM_3301.do' },
+  { id: 'ckline', name: 'CK Line', zh: '天敬海运', p: 7, cntr: ['CKLU'], scac: [],
+    page: 'https://es.ckline.co.kr/?cmd=TRK' },
+  { id: 'panocean', name: 'Pan Ocean', zh: '泛洋海运', p: 8, cntr: ['POLU'], scac: [],
+    page: 'https://container.panocean.com/' },
+  { id: 'pancon', name: 'Pan Continental', zh: '泛洲海运', p: 9, cntr: ['PCLU'], scac: [],
+    page: 'https://www.pancon.co.kr/pan/pageLink.pcl?link=IMP/WEB_109&SCRN_ID=IMP' },
+  { id: 'dongyoung', name: 'Dongyoung', p: 5, cntr: ['DYLU'], scac: [],
+    page: 'https://ebiz.pcsline.co.kr/' },
+  { id: 'jinjiang', name: 'Shanghai Jinjiang', zh: '锦江航运', p: 6, cntr: [], scac: [],
+    page: 'https://ejj.jjshipping.cn/' },
+  { id: 'interasia', name: 'Interasia', zh: '运达航运', p: 2, cntr: ['IAAU'], scac: [],
+    page: 'https://www.interasia.cc/Service/Form?servicetype=0' },
+  { id: 'rcl', name: 'RCL', zh: '宏海箱运', p: 3, cntr: ['REGU'], scac: [],
+    page: 'https://eservice.rclgroup.com/CargoTracking/' },
+  { id: 'culines', name: 'CU Lines', zh: '中联航运', p: 7, cntr: ['CULU'], scac: ['CULU'],
+    page: 'https://www.culines.com/en/site/bill' },
+  { id: 'sealead', name: 'SeaLead', p: 10, cntr: [], scac: ['SQQY', 'SJHH'],
+    page: 'https://www.sea-lead.com/track-shipment/' },
+  { id: 'matson', name: 'Matson', zh: '美森', p: 1, cntr: ['MATU', 'MAGU'], scac: ['MATS'],
+    page: 'https://www.matson.com/shipment-tracking.html' },
+  { id: 'emirates', name: 'Emirates Shipping Line', zh: '阿联酋航运', p: 4, cntr: ['ESDU', 'ESPU'], scac: [],
+    page: 'https://www.emiratesline.com/' }
+];
 
-var OTHER = {
-  ONEY: 'ONE', ONEU: 'ONE', EGLV: 'Evergreen', EGHU: 'Evergreen', EISU: 'Evergreen', EMCU: 'Evergreen',
-  COSU: 'COSCO', CBHU: 'COSCO', CSNU: 'COSCO', OOLU: 'OOCL', OOCU: 'OOCL',
-  YMLU: 'Yang Ming', YMMU: 'Yang Ming', ZIMU: 'ZIM', HDMU: 'HMM', KMTU: 'KMTC', KMTC: 'KMTC',
-  SITU: 'SITC', APLU: 'APL', APZU: 'APL', APHU: 'APL'
-};
+var BY_ID = {}, CNTR_MAP = {}, SCAC_MAP = {};
+CARRIERS.forEach(function (c) {
+  BY_ID[c.id] = c;
+  (c.cntr || []).forEach(function (p) { CNTR_MAP[p] = c.id; });
+  (c.scac || []).forEach(function (p) { if (!SCAC_MAP[p]) SCAC_MAP[p] = c.id; });
+});
+
 var LESSORS = ['TGHU', 'TCNU', 'TEMU', 'TRLU', 'TCLU', 'TTNU', 'TGBU', 'TCKU', 'TRHU', 'TLLU', 'TIFU', 'FSCU', 'CAIU', 'CAXU',
   'BMOU', 'GESU', 'SEGU', 'DFSU', 'FCIU', 'GLDU', 'INKU', 'IPXU', 'UETU', 'XINU', 'BSIU', 'CXDU', 'DRYU', 'GATU', 'CRXU',
   'TXGU', 'BEAU', 'FFAU', 'TIIU'];
@@ -545,8 +670,7 @@ function isoCheckDigit(s) {
   var sum = 0;
   for (var i = 0; i < 10; i++) {
     var ch = s[i];
-    var val = /[0-9]/.test(ch) ? +ch : LETTER_VAL[ch];
-    sum += val * Math.pow(2, i);
+    sum += (/[0-9]/.test(ch) ? +ch : LETTER_VAL[ch]) * Math.pow(2, i);
   }
   var d = sum % 11;
   return d === 10 ? 0 : d;
@@ -554,7 +678,6 @@ function isoCheckDigit(s) {
 
 function parseNumbers(text) {
   var t = String(text || '').normalize('NFKC').toUpperCase();
-  // "MSKU 123456 7" / "MSKU-123456-7" → one container number
   t = t.replace(/([A-Z]{3}[UJZ])[\s\-]*(\d{6})[\s\-]*(\d)(?!\d)/g, '$1$2$3');
   var parts = t.split(/[\s,，、;；\/|]+/);
   var out = [], seen = {};
@@ -565,246 +688,213 @@ function parseNumbers(text) {
   return out;
 }
 
-function carrierByCntr(owner) {
-  for (var i = 0; i < ORDER.length; i++) if (CARRIERS[ORDER[i]].cntr.indexOf(owner) > -1) return CARRIERS[ORDER[i]];
-  return null;
-}
-function carrierByScac(p4) {
-  for (var i = 0; i < ORDER.length; i++) if (CARRIERS[ORDER[i]].scac.indexOf(p4) > -1) return CARRIERS[ORDER[i]];
-  return null;
-}
-
-/* note codes: short | guess9 | guess8 | guessCma */
+/* note codes: short | guess8 | guess9 | guess10 | guess12 | guessOne | guessCma */
 function detect(num, override) {
-  var r = { num: num, type: 'unknown', carrier: null, conf: 'none', check: null, expected: null, note: '', other: null, lessor: false, query: num, alt: null };
+  var r = { num: num, type: 'unknown', carrier: null, cands: [], conf: 'none', check: null, expected: null, note: '', lessor: false, scac: null };
   if (/^[A-Z]{3}[UJZ]\d{7}$/.test(num)) {
-    var exp = isoCheckDigit(num), ok = exp === +num[10], owner = num.slice(0, 4);
-    var c = carrierByCntr(owner);
+    var exp = isoCheckDigit(num), ok = exp === +num[10], owner = num.slice(0, 4), id = CNTR_MAP[owner];
     r.check = ok; r.expected = exp; r.type = 'container';
-    if (c) {
-      r.carrier = c.id; r.conf = 'sure';
-      if (!ok && c.scac.indexOf(owner) > -1) r.type = 'maybe';
+    if (id) {
+      r.carrier = id; r.cands = [id]; r.conf = 'sure';
+      if (!ok && SCAC_MAP[owner] === id) { r.type = 'maybe'; r.scac = owner; }
     } else if (LESSORS.indexOf(owner) > -1) {
       r.lessor = true;
-    } else if (OTHER[owner]) {
-      r.other = OTHER[owner];
     }
   } else if (num.length < 6) {
     r.note = 'short';
   } else {
-    var p4 = num.slice(0, 4), cs = carrierByScac(p4);
-    if (cs && num.length > 6) {
-      r.carrier = cs.id; r.conf = 'sure'; r.type = 'bl';
-      if (cs.id === 'maersk' && /^MAEU\d{9,10}$/.test(num)) r.query = num.slice(4);
-      else r.alt = num.slice(4);
-    } else if (OTHER[p4] && num.length > 6) {
-      r.type = 'bl'; r.other = OTHER[p4];
-    } else if (/^\d{9,10}$/.test(num)) {
-      r.carrier = 'maersk'; r.conf = 'guess'; r.type = 'bl'; r.note = 'guess9';
-    } else if (/^\d{8}$/.test(num)) {
-      r.carrier = 'hapag'; r.conf = 'guess'; r.type = 'booking'; r.note = 'guess8';
-    } else if (/^[A-Z]{3}\d{7}$/.test(num)) {
-      r.carrier = 'cma'; r.conf = 'guess'; r.type = 'bl'; r.note = 'guessCma';
+    var p4 = num.slice(0, 4), sid = SCAC_MAP[p4];
+    if (sid && num.length > 6) {
+      r.carrier = sid; r.cands = [sid]; r.conf = 'sure'; r.type = 'bl'; r.scac = p4;
+    } else {
+      var guess = null;
+      if (/^\d{8}$/.test(num)) guess = [['hapag'], 'booking', 'guess8'];
+      else if (/^\d{9}$/.test(num)) guess = [['maersk'], 'bl', 'guess9'];
+      else if (/^\d{10}$/.test(num)) guess = [['cosco', 'oocl'], 'bl', 'guess10'];
+      else if (/^\d{12}$/.test(num)) guess = [['evergreen'], 'bl', 'guess12'];
+      else if (/^[A-Z]{4}\d{8}$/.test(num)) guess = [['one'], 'bl', 'guessOne'];
+      else if (/^[A-Z]{3}\d{7}$/.test(num)) guess = [['cma'], 'bl', 'guessCma'];
+      if (guess) { r.cands = guess[0]; r.carrier = guess[0][0]; r.type = guess[1]; r.note = guess[2]; r.conf = 'guess'; }
     }
   }
-  if (override && CARRIERS[override] && override !== r.carrier) { r.carrier = override; r.conf = 'manual'; }
-  else if (override && override === r.carrier && r.conf === 'guess') { r.conf = 'manual'; }
+  if (override && BY_ID[override]) {
+    if (override !== r.carrier || r.conf === 'guess') r.conf = 'manual';
+    r.carrier = override;
+  }
   return r;
 }
 
-function linkFor(r) {
-  var c = CARRIERS[r.carrier];
-  if (!c) return null;
-  return c.mode === 'auto' ? c.url(r.query, r.type) : c.page;
+/* the number to hand to the carrier site, and the other spelling to offer */
+function queryFor(r) {
+  var c = BY_ID[r.carrier];
+  if (c && r.scac && r.type !== 'container' && SCAC_MAP[r.scac] === c.id && c.strip && c.strip.indexOf(r.scac) > -1) {
+    return { q: r.num.slice(4), alt: r.num };
+  }
+  return { q: r.num, alt: (r.scac && r.type !== 'container') ? r.num.slice(4) : null };
 }
 
-if (typeof module !== 'undefined') module.exports = { detect: detect, parseNumbers: parseNumbers, isoCheckDigit: isoCheckDigit, linkFor: linkFor, CARRIERS: CARRIERS };
+function linkFor(r) {
+  var c = BY_ID[r.carrier];
+  if (!c) return null;
+  var key = r.type === 'container' ? 'c' : (r.type === 'booking' ? 'k' : 'b');
+  var fn = c.auto && (c.auto[key] || (key === 'k' ? c.auto.b : null));
+  var q = queryFor(r).q;
+  return fn ? { href: fn(q), auto: true, verified: c.verified !== false } : { href: c.page, auto: false };
+}
+
+function modeOf(c) {
+  if (!c.auto) return 'copy';
+  if (c.verified === false) return 'unverified';
+  return c.auto.b ? 'auto' : 'autoCntr';
+}
+
+if (typeof module !== 'undefined') module.exports = { detect: detect, parseNumbers: parseNumbers, isoCheckDigit: isoCheckDigit, linkFor: linkFor, queryFor: queryFor, CARRIERS: CARRIERS, BY_ID: BY_ID };
 </script>
 
 <script id="i18n">
 var I18N = {
   en: {
-    docTitle: 'Carrier Tracker',
-    appName: 'Carrier Tracker',
-    tag: 'ONE-CLICK LOOKUP',
-    bandMeta: 'MBL / container no. → carrier detected → official site',
+    docTitle: 'Carrier Tracker', appName: 'Carrier Tracker', tag: 'ONE-CLICK LOOKUP',
+    heroTitle: 'Paste a number, reach the carrier',
+    heroLede: 'Detects the shipping line from an MBL, container or booking number and opens its tracking page. Where the site allows it, the number is filled in and the search runs for you.',
+    factCarriers: '<b>{n}</b> carriers', factAuto: '<b>{n}</b> search automatically', factTypes: 'MBL · Container · Booking',
     inputLabel: 'Enter an MBL or container number',
     keys: '<kbd>Enter</kbd> open · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>/</kbd> back to input',
     placeholder: 'Paste a number. Separate several with line breaks, spaces or commas.',
-    clear: 'Clear',
-    logTitle: 'Recent lookups',
-    regTitle: 'Carriers',
-    th1: 'Carrier', th2: 'Detected by', th3: 'How it opens',
+    clear: 'Clear', logTitle: 'Recent lookups',
+    dirTitle: 'Supported carriers', dirSearchPh: 'Search name or prefix', fAll: 'All', fAuto: 'Auto search', fCopy: 'Copy & paste',
+    showAll: 'Show all {n} carriers', showLess: 'Show fewer', noMatch: 'No carrier matches that search.', openPage: 'Open tracking page ↗',
+    m_auto: 'Auto search', m_autoCntr: 'Auto (container no.)', m_unverified: 'Auto (unverified)', m_copy: 'Copy & paste',
     lessorFine: 'Leased boxes (TGHU, TCNU, TEMU, etc.) don\'t reveal the carrier. Pick one once and it will be remembered.',
-    prefIntro: 'Opening animation',
-    prefPaste: 'Open the carrier site on paste (only when the carrier is certain)',
-    replay: 'Replay animation',
+    unverifiedFine: 'Hapag-Lloyd and ZIM showed a security check during testing, so their auto-fill links could not be confirmed. If the search box is empty when the page opens, press Ctrl+V.',
+    prefIntro: 'Opening animation', prefPaste: 'Open the carrier site on paste (only when the carrier is certain)', replay: 'Replay animation',
     privacy: 'Lookups happen on the carriers\' own sites. This page only detects and redirects; numbers and history stay in your browser.',
-    framedNote: 'In this online preview the browser blocks "open on paste". It works in the downloaded local file; here, press Enter or click the button.',
-    skip: 'Skip ›',
-    idleLead: 'Results appear here, for example:',
+    framedNote: 'In this online preview the browser blocks "open on paste". It works in the downloaded file and on a published site; here, press Enter or click the button.',
+    skip: 'Skip ›', idleLead: 'Results appear here, for example:',
     type_container: 'Container no.', type_bl: 'B/L no.', type_booking: 'Booking no.', type_maybe: 'Container or B/L', type_unknown: 'Unknown format',
-    chkOk: 'Check digit OK',
-    chkBad: 'Check digit wrong, should be {d}',
-    chkMaybe: 'Check digit mismatch, may be a B/L no.',
-    checkDigit: 'Check digit',
-    guess: 'Best guess', manual: 'Chosen manually',
-    other: '{name} (not supported yet)', lessor: 'Leased box', unknownCarrier: 'Carrier not detected',
+    chkOk: 'Check digit OK', chkBad: 'Check digit wrong, should be {d}', chkMaybe: 'Check digit mismatch, may be a B/L no.', checkDigit: 'Check digit',
+    guess: 'Best guess', manual: 'Chosen manually', lessor: 'Leased box', unknownCarrier: 'Carrier not detected',
     note_short: 'Too short to be a B/L or container number.',
     note_lessor: 'This box belongs to a leasing company, so the number doesn\'t show the carrier. Pick a carrier to open; your choice will be remembered.',
-    note_other: 'Detected as {name}, which isn\'t in the carrier list yet. You can pick a carrier manually.',
     note_none: 'Couldn\'t tell the carrier from the format. Please pick one.',
-    note_guess9: 'Digits only (9–10): probably a Maersk B/L or booking number.',
     note_guess8: 'Digits only (8): probably a Hapag-Lloyd booking number.',
+    note_guess9: 'Digits only (9): probably a Maersk B/L or booking number.',
+    note_guess10: 'Digits only (10): usually COSCO or OOCL.',
+    note_guess12: 'Digits only (12): probably an Evergreen B/L number.',
+    note_guessOne: '4 letters + 8 digits: probably an ONE B/L number without the ONEY prefix.',
     note_guessCma: '3 letters + 7 digits: probably a CMA CGM B/L number.',
-    goAuto: 'Track on {name}', goCopy: 'Copy number & open {name}',
-    goAutoSm: 'Track', goCopySm: 'Copy & open',
-    copyAlt: 'Copy without prefix: {n}',
-    changeCarrier: 'Wrong carrier? Change it',
-    changeTo: 'Change to:', pickOpen: 'Open with:', pickCarrier: 'Choose carrier:',
+    alsoMaybe: 'Could also be:',
+    goAuto: 'Track on {name}', goCopy: 'Copy number & open {name}', goAutoSm: 'Track', goCopySm: 'Copy & open',
+    copyAlt: 'Copy as {n}', changeCarrier: 'Wrong carrier? Change it',
+    pickOpen: 'Open with', changeTo: 'Change to', selectPh: 'Choose a carrier…',
     batchHead: '<strong>{n}</strong> numbers, <strong>{k}</strong> recognized. Browsers open only one new tab per click, so open them one by one.',
-    openNext: 'Open next', opened: 'Opened',
-    allOpened: 'All recognized numbers have been opened.',
+    openNext: 'Open next', opened: 'Opened', allOpened: 'All recognized numbers have been opened.',
     toastAuto: 'Opened {name}. The number is on your clipboard too.',
-    toastNoInput: 'Enter or paste a number first.',
-    toastNoCarrier: 'Carrier not set yet. Pick one below.',
+    toastNoInput: 'Enter or paste a number first.', toastNoCarrier: 'Carrier not set yet. Pick one below.',
     toastBlocked: 'The browser blocked the new tab. Press Enter or click the button below.',
-    toastCopied: 'Copied {n}',
-    toastReduced: 'Reduced motion is turned on in your system settings, so the animation won\'t play.',
+    toastCopied: 'Copied {n}', toastReduced: 'Reduced motion is turned on in your system settings, so the animation won\'t play.',
     logEmpty: 'No lookups yet. Try the sample numbers below to see detection at work. They are made up; the last two show a wrong check digit and a digits-only B/L.',
     fillTitle: 'Put in the input box', clearLog: 'Clear history',
-    reg_cntr: 'Container', reg_bl: 'B/L', reg_blStarts: 'starts with {p}', reg_other: 'Other',
-    rule_maersk: 'digits only, 9–10 (guess)', rule_hapag: '8-digit booking no. (guess)', rule_cma: '3 letters + 7 digits (guess)',
-    mode_auto: 'Opens and searches', mode_unverified: 'Auto-fill (unverified)', mode_copy: 'Copy, then paste',
-    hint_maersk: 'The site fills in the number and runs the search for you.',
-    hint_hapag: 'Tries to fill in the number for you. The site may show a security check first; if the box is empty afterwards, press Ctrl+V.',
-    hint_cma: 'This site can\'t take the number from a link. It\'s copied: press Ctrl+V in the search box, then click Search.',
-    hint_msc: 'This site can\'t take the number from a link. It\'s copied: choose Container/Bill of Lading Number, then press Ctrl+V.',
-    hint_wanhai: 'This site can\'t take the number from a link. It\'s copied: choose the search type in the dropdown, then press Ctrl+V.',
-    name_wanhai: 'Wan Hai'
+    hint_auto: 'The site fills in the number and runs the search.',
+    hint_unverified: 'Tries to fill in the number. The site may show a security check first; if the search box is empty afterwards, press Ctrl+V.',
+    hint_copy: 'This site can\'t take the number from a link. It\'s on your clipboard: press Ctrl+V in the search box, then search.',
+    tip_msc: 'Choose "Container/Bill of Lading Number" first.', tip_wanhai: 'Choose the search type in the dropdown first.', tip_evergreen: 'Choose B/L No., Container No. or Booking No. first.'
   },
   ja: {
-    docTitle: 'ワンクリック船社追跡',
-    appName: 'ワンクリック船社追跡',
-    tag: 'CARRIER TRACKER',
-    bandMeta: 'MBL・コンテナ番号 → 船社を自動判別 → 公式サイトへ',
+    docTitle: 'ワンクリック船社追跡', appName: 'ワンクリック船社追跡', tag: 'CARRIER TRACKER',
+    heroTitle: '番号を貼るだけで、船社のサイトへ',
+    heroLede: 'MBL番号・コンテナ番号・ブッキング番号から船社を判別し、追跡ページを開きます。対応しているサイトでは、番号の入力と検索まで自動で行います。',
+    factCarriers: '<b>{n}</b> 社に対応', factAuto: '<b>{n}</b> 社は検索まで自動', factTypes: 'MBL・コンテナ・ブッキング',
     inputLabel: 'MBL番号またはコンテナ番号を入力',
     keys: '<kbd>Enter</kbd> で開く · <kbd>Shift</kbd>+<kbd>Enter</kbd> で改行 · <kbd>/</kbd> で入力欄へ',
     placeholder: '番号を貼り付けてください。複数の場合は改行・スペース・カンマで区切ります。',
-    clear: 'クリア',
-    logTitle: '最近の検索',
-    regTitle: '対応船社',
-    th1: '船社', th2: '判別ルール', th3: '開き方',
+    clear: 'クリア', logTitle: '最近の検索',
+    dirTitle: '対応船社', dirSearchPh: '船社名・接頭辞で検索', fAll: 'すべて', fAuto: '自動検索', fCopy: 'コピーして貼り付け',
+    showAll: '全 {n} 社を表示', showLess: '折りたたむ', noMatch: '該当する船社がありません。', openPage: '追跡ページを開く ↗',
+    m_auto: '自動検索', m_autoCntr: '自動（コンテナ番号）', m_unverified: '自動（未検証）', m_copy: 'コピーして貼り付け',
     lessorFine: 'リース会社のコンテナ（TGHU、TCNU、TEMU など）は番号から船社を判別できません。一度選べば次回から記憶します。',
-    prefIntro: '起動アニメーション',
-    prefPaste: '貼り付けたらすぐ公式サイトを開く（船社が確定した場合のみ）',
-    replay: 'アニメーションを再生',
+    unverifiedFine: 'Hapag-Lloyd と ZIM はテスト時にセキュリティチェックが表示されたため、自動入力リンクを確認できていません。ページを開いたとき入力欄が空なら Ctrl+V で貼り付けてください。',
+    prefIntro: '起動アニメーション', prefPaste: '貼り付けたらすぐ公式サイトを開く（船社が確定した場合のみ）', replay: 'アニメーションを再生',
     privacy: '検索は各船社の公式サイトで行われます。このページは判別とページ移動だけを行い、番号と履歴はお使いのブラウザ内にのみ保存されます。',
-    framedNote: 'オンラインプレビューでは「貼り付けたらすぐ開く」がブラウザにブロックされます。ダウンロードしたローカル版では動作します。ここでは Enter かボタンを押してください。',
-    skip: 'スキップ ›',
-    idleLead: '判別結果はここに表示されます。例：',
+    framedNote: 'オンラインプレビューでは「貼り付けたらすぐ開く」がブラウザにブロックされます。ダウンロードしたファイルや公開サイトでは動作します。ここでは Enter かボタンを押してください。',
+    skip: 'スキップ ›', idleLead: '判別結果はここに表示されます。例：',
     type_container: 'コンテナ番号', type_bl: 'B/L番号', type_booking: 'ブッキング番号', type_maybe: 'コンテナ番号またはB/L番号', type_unknown: '形式不明',
-    chkOk: 'チェックデジット正常',
-    chkBad: 'チェックデジット不一致（正しくは {d}）',
-    chkMaybe: 'チェックデジット不一致。B/L番号の可能性あり',
-    checkDigit: 'チェックデジット',
-    guess: '推定', manual: '手動選択',
-    other: '{name}（未対応）', lessor: 'リースコンテナ', unknownCarrier: '船社を判別できません',
+    chkOk: 'チェックデジット正常', chkBad: 'チェックデジット不一致（正しくは {d}）', chkMaybe: 'チェックデジット不一致。B/L番号の可能性あり', checkDigit: 'チェックデジット',
+    guess: '推定', manual: '手動選択', lessor: 'リースコンテナ', unknownCarrier: '船社を判別できません',
     note_short: '桁数が少なく、B/L番号やコンテナ番号ではなさそうです。',
     note_lessor: 'リース会社のコンテナのため、番号から船社を判別できません。船社を選んで開いてください。選択内容は記憶されます。',
-    note_other: '{name} と判別しましたが、まだ対応船社に入っていません。船社を手動で選べます。',
     note_none: '形式から船社を判別できませんでした。船社を選んでください。',
-    note_guess9: '数字のみ9〜10桁のため、Maersk のB/L番号またはブッキング番号と推定しました。',
     note_guess8: '数字のみ8桁のため、Hapag-Lloyd のブッキング番号と推定しました。',
+    note_guess9: '数字のみ9桁のため、Maersk のB/L番号またはブッキング番号と推定しました。',
+    note_guess10: '数字のみ10桁は、COSCO か OOCL のことが多いです。',
+    note_guess12: '数字のみ12桁のため、Evergreen のB/L番号と推定しました。',
+    note_guessOne: '英字4桁＋数字8桁のため、接頭辞 ONEY を除いた ONE のB/L番号と推定しました。',
     note_guessCma: '英字3桁＋数字7桁のため、CMA CGM のB/L番号と推定しました。',
-    goAuto: '{name} の公式サイトで検索', goCopy: '番号をコピーして {name} を開く',
-    goAutoSm: '検索', goCopySm: 'コピーして開く',
-    copyAlt: '接頭辞なしでコピー：{n}',
-    changeCarrier: '船社が違う場合は変更',
-    changeTo: '変更先：', pickOpen: '開く船社を選択：', pickCarrier: '船社を選択：',
+    alsoMaybe: 'ほかの候補：',
+    goAuto: '{name} の公式サイトで検索', goCopy: '番号をコピーして {name} を開く', goAutoSm: '検索', goCopySm: 'コピーして開く',
+    copyAlt: '{n} としてコピー', changeCarrier: '船社が違う場合は変更',
+    pickOpen: '開く船社', changeTo: '変更先', selectPh: '船社を選択…',
     batchHead: '全 <strong>{n}</strong> 件、うち <strong>{k}</strong> 件を判別しました。ブラウザは1クリックで1タブしか開けないため、順番に開いてください。',
-    openNext: '次を開く', opened: '表示済み',
-    allOpened: '判別できた番号はすべて開きました。',
+    openNext: '次を開く', opened: '表示済み', allOpened: '判別できた番号はすべて開きました。',
     toastAuto: '{name} を開きました。番号もコピー済みです。',
-    toastNoInput: '先に番号を入力するか貼り付けてください。',
-    toastNoCarrier: '船社が未確定です。下から選んでください。',
+    toastNoInput: '先に番号を入力するか貼り付けてください。', toastNoCarrier: '船社が未確定です。下から選んでください。',
     toastBlocked: 'ブラウザが新しいタブをブロックしました。Enter を押すか、下のボタンをクリックしてください。',
-    toastCopied: '{n} をコピーしました',
-    toastReduced: 'OS の「動きを減らす」設定がオンのため、アニメーションは再生されません。',
+    toastCopied: '{n} をコピーしました', toastReduced: 'OS の「動きを減らす」設定がオンのため、アニメーションは再生されません。',
     logEmpty: 'まだ検索履歴はありません。下のサンプル番号で判別の様子を試せます。架空の番号で、最後の2つはチェックデジットの誤りと数字のみのB/L番号の例です。',
     fillTitle: '入力欄に入れる', clearLog: '履歴を消去',
-    reg_cntr: 'コンテナ', reg_bl: 'B/L', reg_blStarts: '{p} で始まる', reg_other: 'その他',
-    rule_maersk: '数字のみ9〜10桁（推定）', rule_hapag: '8桁のブッキング番号（推定）', rule_cma: '英字3桁＋数字7桁（推定）',
-    mode_auto: '自動で検索', mode_unverified: '自動入力（未検証）', mode_copy: 'コピーして貼り付け',
-    hint_maersk: '公式サイトで番号が自動入力され、そのまま検索されます。',
-    hint_hapag: '番号の自動入力を試みます。先にセキュリティチェックが表示されることがあります。その後、入力欄が空なら Ctrl+V で貼り付けてください。',
-    hint_cma: 'このサイトはリンクで番号を受け取れません。番号はコピー済みなので、入力欄で Ctrl+V を押して Search をクリックしてください。',
-    hint_msc: 'このサイトはリンクで番号を受け取れません。番号はコピー済みです。Container/Bill of Lading Number を選んでから Ctrl+V で貼り付けてください。',
-    hint_wanhai: 'このサイトはリンクで番号を受け取れません。番号はコピー済みです。プルダウンで検索種別を選んでから Ctrl+V で貼り付けてください。',
-    name_wanhai: 'Wan Hai（萬海）'
+    hint_auto: '公式サイトで番号が自動入力され、そのまま検索されます。',
+    hint_unverified: '番号の自動入力を試みます。先にセキュリティチェックが表示されることがあります。その後、入力欄が空なら Ctrl+V で貼り付けてください。',
+    hint_copy: 'このサイトはリンクで番号を受け取れません。番号はコピー済みなので、入力欄で Ctrl+V を押して検索してください。',
+    tip_msc: '先に「Container/Bill of Lading Number」を選んでください。', tip_wanhai: '先にプルダウンで検索種別を選んでください。', tip_evergreen: '先に B/L No.・Container No.・Booking No. のどれかを選んでください。'
   },
   zh: {
-    docTitle: '船社追踪一键查',
-    appName: '船社追踪一键查',
-    tag: 'CARRIER TRACKER',
-    bandMeta: 'MBL / 箱号 → 自动识别船社 → 打开官网',
+    docTitle: '船社追踪一键查', appName: '船社追踪一键查', tag: 'CARRIER TRACKER',
+    heroTitle: '粘贴单号，直达船社官网',
+    heroLede: '根据 MBL 号、箱号或订舱号识别船社，并打开它的追踪页。官网支持的话，单号会自动带入并完成查询。',
+    factCarriers: '支持 <b>{n}</b> 家船社', factAuto: '<b>{n}</b> 家可自动查询', factTypes: 'MBL · 箱号 · 订舱号',
     inputLabel: '输入 MBL 号或箱号',
     keys: '<kbd>Enter</kbd> 打开 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行 · <kbd>/</kbd> 回到输入框',
     placeholder: '粘贴单号即可，多个单号用换行、空格或逗号隔开',
-    clear: '清空',
-    logTitle: '最近查询',
-    regTitle: '常用船社',
-    th1: '船社', th2: '识别依据', th3: '打开方式',
+    clear: '清空', logTitle: '最近查询',
+    dirTitle: '支持的船社', dirSearchPh: '按名称或前缀搜索', fAll: '全部', fAuto: '自动查询', fCopy: '复制粘贴',
+    showAll: '显示全部 {n} 家', showLess: '收起', noMatch: '没有匹配的船社。', openPage: '打开查询页 ↗',
+    m_auto: '自动查询', m_autoCntr: '自动（箱号）', m_unverified: '自动（待验证）', m_copy: '复制粘贴',
     lessorFine: '租赁公司的箱子（TGHU、TCNU、TEMU 等）看不出承运船社，识别后手动选一次，之后会记住。',
-    prefIntro: '开屏动画',
-    prefPaste: '粘贴后直接打开官网（仅限识别确定时）',
-    replay: '重播动画',
+    unverifiedFine: 'Hapag-Lloyd 和 ZIM 测试时弹出了安全验证，自动带入链接没能确认。打开后如果输入框是空的，按 Ctrl+V 粘贴即可。',
+    prefIntro: '开屏动画', prefPaste: '粘贴后直接打开官网（仅限识别确定时）', replay: '重播动画',
     privacy: '查询都在船社官网完成。这个页面只负责识别和跳转，单号和查询记录只保存在你自己的浏览器里。',
-    framedNote: '在线预览里浏览器会拦截“粘贴后直接打开”，这个选项在下载的本地版里生效；预览里按 Enter 或点按钮即可。',
-    skip: '跳过 ›',
-    idleLead: '识别结果会显示在这里，例如：',
+    framedNote: '在线预览里浏览器会拦截“粘贴后直接打开”，下载的文件和发布后的网址里可以正常使用；预览里按 Enter 或点按钮即可。',
+    skip: '跳过 ›', idleLead: '识别结果会显示在这里，例如：',
     type_container: '箱号', type_bl: '提单号', type_booking: '订舱号', type_maybe: '箱号或提单号', type_unknown: '格式未知',
-    chkOk: '校验位正确',
-    chkBad: '校验位不符，应为 {d}',
-    chkMaybe: '校验位不符，也可能是提单号',
-    checkDigit: '校验位',
-    guess: '推测', manual: '手动指定',
-    other: '{name}（暂未收录）', lessor: '租赁箱', unknownCarrier: '未识别船社',
+    chkOk: '校验位正确', chkBad: '校验位不符，应为 {d}', chkMaybe: '校验位不符，也可能是提单号', checkDigit: '校验位',
+    guess: '推测', manual: '手动指定', lessor: '租赁箱', unknownCarrier: '未识别船社',
     note_short: '位数太短，不像提单号或箱号。',
     note_lessor: '这是租赁公司的箱子，箱号看不出承运船社。请选一家船社打开，选过的会记住。',
-    note_other: '识别为 {name}，还没加入常用船社列表。可以手动选一家打开。',
     note_none: '没能从格式判断船社，请手动选择。',
-    note_guess9: '9–10 位纯数字，推测是 Maersk 的提单号或订舱号。',
     note_guess8: '8 位纯数字，推测是 Hapag-Lloyd 的订舱号。',
+    note_guess9: '9 位纯数字，推测是 Maersk 的提单号或订舱号。',
+    note_guess10: '10 位纯数字，通常是 COSCO 或 OOCL。',
+    note_guess12: '12 位纯数字，推测是长荣的提单号。',
+    note_guessOne: '4 个字母加 8 位数字，推测是去掉 ONEY 前缀的 ONE 提单号。',
     note_guessCma: '3 个字母加 7 位数字，推测是 CMA CGM 的提单号。',
-    goAuto: '在 {name} 官网查询', goCopy: '复制单号并打开 {name}',
-    goAutoSm: '查询', goCopySm: '复制并打开',
-    copyAlt: '复制不带前缀：{n}',
-    changeCarrier: '不是这家？改选船社',
-    changeTo: '改为：', pickOpen: '用哪家打开：', pickCarrier: '选择船社：',
+    alsoMaybe: '也可能是：',
+    goAuto: '在 {name} 官网查询', goCopy: '复制单号并打开 {name}', goAutoSm: '查询', goCopySm: '复制并打开',
+    copyAlt: '复制为 {n}', changeCarrier: '不是这家？改选船社',
+    pickOpen: '用哪家打开', changeTo: '改为', selectPh: '选择船社…',
     batchHead: '共 <strong>{n}</strong> 个单号，已识别 <strong>{k}</strong> 个。浏览器一次只允许打开一个新标签页，请逐个打开。',
-    openNext: '打开下一个', opened: '已打开',
-    allOpened: '已识别的单号都打开过了。',
+    openNext: '打开下一个', opened: '已打开', allOpened: '已识别的单号都打开过了。',
     toastAuto: '已打开 {name}，单号也复制好了。',
-    toastNoInput: '先输入或粘贴一个单号。',
-    toastNoCarrier: '还没确定船社，请在下面选一家。',
+    toastNoInput: '先输入或粘贴一个单号。', toastNoCarrier: '还没确定船社，请在下面选一家。',
     toastBlocked: '浏览器拦截了自动打开，按 Enter 或点下面的按钮即可。',
-    toastCopied: '已复制 {n}',
-    toastReduced: '系统开启了“减少动态效果”，动画不会播放。',
+    toastCopied: '已复制 {n}', toastReduced: '系统开启了“减少动态效果”，动画不会播放。',
     logEmpty: '还没有查询记录。点下面的示例单号看看识别效果（虚构号码，只用来演示，最后两个分别演示校验位出错和纯数字提单号）。',
     fillTitle: '填入输入框', clearLog: '清空记录',
-    reg_cntr: '箱号', reg_bl: '提单', reg_blStarts: '{p} 开头', reg_other: '其他',
-    rule_maersk: '9–10 位纯数字（推测）', rule_hapag: '8 位纯数字订舱号（推测）', rule_cma: '3 字母 + 7 数字（推测）',
-    mode_auto: '自动查询', mode_unverified: '自动带入（待验证）', mode_copy: '复制单号后粘贴',
-    hint_maersk: '官网会自动带入单号并查询。',
-    hint_hapag: '会尝试自动带入单号。官网偶尔先弹安全验证，过了之后如果输入框是空的，按 Ctrl+V 粘贴即可。',
-    hint_cma: '官网不支持网址带单号。单号已复制，在输入框按 Ctrl+V，再点 Search。',
-    hint_msc: '官网不支持网址带单号。单号已复制，选 Container/Bill of Lading Number 后按 Ctrl+V 查询。',
-    hint_wanhai: '官网不支持网址带单号。单号已复制，先在下拉框选好查询类型，再按 Ctrl+V 查询。',
-    name_wanhai: 'Wan Hai 万海'
+    hint_auto: '官网会自动带入单号并查询。',
+    hint_unverified: '会尝试自动带入单号。官网可能先弹安全验证，过了之后如果输入框是空的，按 Ctrl+V 粘贴即可。',
+    hint_copy: '官网不支持网址带单号。单号已复制，在输入框按 Ctrl+V 再查询。',
+    tip_msc: '先选 Container/Bill of Lading Number。', tip_wanhai: '先在下拉框选好查询类型。', tip_evergreen: '先选好 B/L No.、Container No. 或 Booking No.。'
   }
 };
-var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳明', SITC: '海丰' };
 </script>
 
 <script>
@@ -819,11 +909,12 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
   var history = store.get('ct.history', []);
   if (!Array.isArray(history)) history = [];
   var overrides = store.get('ct.overrides', {}) || {};
-  var opened = {};
-  var results = [];
+  var opened = {}, results = [];
+  var dirState = { q: '', filter: 'all', expanded: false };
+  var DIR_PREVIEW = 9;
 
   var q = $('#q'), readout = $('#readout');
-  var EXAMPLES = ['MRKU4821076', 'HLXU2310542', 'CMAU7302917', 'MSCU7351024', 'WHLU5590317', 'TGHU8820148', 'MSKU1234567', '251234567'];
+  var EXAMPLES = ['MRKU4821076', 'ONEU7305121', 'HLXU2310542', 'CMAU7302917', 'MSCU7351024', 'CBHU7305620', 'WHLU5590317', 'TGHU8820148', 'MSKU1234567', '6123456789'];
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function t(key, vars) {
@@ -831,8 +922,8 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
     if (vars) s = s.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
     return s;
   }
-  function cName(c) { return c.id === 'wanhai' ? t('name_wanhai') : c.name; }
-  function otherName(n) { return prefs.lang === 'zh' && OTHER_ZH[n] ? n + ' ' + OTHER_ZH[n] : n; }
+  function cName(c) { return prefs.lang === 'zh' && c.zh ? c.name + ' ' + c.zh : c.name; }
+  var SORTED = CARRIERS.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
 
   /* ---------- clipboard + toast ---------- */
   function copyText(text) {
@@ -851,12 +942,12 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
   var toastTimer;
   function toast(msg) {
     var el = $('#toast'); el.textContent = msg; el.classList.add('show');
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4200);
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4600);
   }
 
   /* ---------- small renderers ---------- */
   function boxHTML(c, sm) {
-    return '<span class="box' + (sm ? ' sm' : '') + '" style="--c:' + (c ? c.color : 'var(--c-none)') + '"></span>';
+    return '<span class="box' + (sm ? ' sm' : '') + '" style="--c:' + (c ? 'var(--p' + c.p + ')' : 'var(--c-none)') + '"></span>';
   }
   function numHTML(r, sm) {
     var n = esc(r.num);
@@ -876,34 +967,42 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
     return '<span class="pills">' + out.join('') + '</span>';
   }
   function carrierName(r) {
-    var c = CARRIERS[r.carrier];
+    var c = BY_ID[r.carrier];
     if (c) return cName(c);
-    if (r.other) return t('other', { name: otherName(r.other) });
     if (r.lessor) return t('lessor');
     return t('unknownCarrier');
   }
   function noteText(r) {
     if (r.note === 'short') return t('note_short');
     if (r.lessor && !r.carrier) return t('note_lessor');
-    if (r.other && !r.carrier) return t('note_other', { name: otherName(r.other) });
     if (!r.carrier) return t('note_none');
     if (r.note && r.conf === 'guess') return t('note_' + r.note);
     return '';
   }
-  function chipsHTML(r, label) {
-    var h = '<div class="chips" data-for="' + esc(r.num) + '"><span class="lbl">' + esc(label) + '</span>';
-    for (var i = 0; i < ORDER.length; i++) {
-      var c = CARRIERS[ORDER[i]];
-      h += '<button type="button" class="chip" data-pick="' + c.id + '">' + boxHTML(c, true) + esc(cName(c)) + '</button>';
-    }
-    return h + '</div>';
+  function selectHTML(r, labelKey) {
+    var h = '<label class="pick"><span>' + esc(t(labelKey)) + '</span><select data-pick-select="' + esc(r.num) + '">' +
+      '<option value="">' + esc(t('selectPh')) + '</option>';
+    SORTED.forEach(function (c) { h += '<option value="' + c.id + '"' + (c.id === r.carrier && r.conf === 'manual' ? ' selected' : '') + '>' + esc(cName(c)) + '</option>'; });
+    return h + '</select></label>';
+  }
+  function candChips(r) {
+    var others = r.cands.filter(function (id) { return id !== r.carrier; });
+    if (!others.length) return '';
+    return '<div class="chips" data-for="' + esc(r.num) + '"><span class="lbl">' + esc(t('alsoMaybe')) + '</span>' +
+      others.map(function (id) { var c = BY_ID[id]; return '<button type="button" class="chip" data-pick="' + id + '">' + boxHTML(c, true) + esc(cName(c)) + '</button>'; }).join('') + '</div>';
   }
   function goHTML(r, small) {
-    var c = CARRIERS[r.carrier], href = linkFor(r);
-    if (!c || !href) return '';
-    var key = c.mode === 'auto' ? (small ? 'goAutoSm' : 'goAuto') : (small ? 'goCopySm' : 'goCopy');
+    var c = BY_ID[r.carrier], l = linkFor(r);
+    if (!c || !l) return '';
+    var key = l.auto ? (small ? 'goAutoSm' : 'goAuto') : (small ? 'goCopySm' : 'goCopy');
     return '<a class="btn ' + (small ? 'small ' : '') + 'primary" data-go="' + esc(r.num) + '" data-carrier="' + c.id +
-      '" href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(t(key, { name: cName(c) })) + ' <span class="arrow">↗</span></a>';
+      '" href="' + esc(l.href) + '" target="_blank" rel="noopener">' + esc(t(key, { name: cName(c) })) + ' <span class="arrow">↗</span></a>';
+  }
+  function hintFor(r) {
+    var c = BY_ID[r.carrier], l = linkFor(r);
+    var s = l.auto ? (l.verified ? t('hint_auto') : t('hint_unverified')) : t('hint_copy');
+    if (!l.auto && c.tip) s += ' ' + t(c.tip);
+    return { text: s, cls: l.auto ? 'auto' : 'copy' };
   }
 
   /* ---------- readout ---------- */
@@ -919,25 +1018,27 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
     readout.innerHTML =
       '<div class="idle"><span>' + esc(t('idleLead')) + '</span>' +
       '<div class="demo">' + numHTML({ num: 'MRKU4821076', type: 'container', check: true }) +
-      '<span class="to">→</span><span class="badge">' + boxHTML(CARRIERS.maersk) + '<strong>Maersk</strong></span>' +
+      '<span class="to">→</span><span class="badge">' + boxHTML(BY_ID.maersk) + '<strong>Maersk</strong></span>' +
       '<span class="pill ok">' + esc(t('chkOk')) + '</span></div></div>';
   }
 
   function renderSingle(r) {
-    var c = CARRIERS[r.carrier];
-    var h = '<div class="ro-head"><span class="badge">' + boxHTML(c) + '<span class="ro-name">' + esc(carrierName(r)) + '</span></span>' +
-      pillsHTML(r) + '</div>';
+    var c = BY_ID[r.carrier];
+    var h = '<div class="ro-head"><span class="badge">' + boxHTML(c) + '<span class="ro-name">' + esc(carrierName(r)) + '</span></span>' + pillsHTML(r) + '</div>';
     h += numHTML(r);
     var note = noteText(r);
     if (note) h += '<p class="ro-note">' + esc(note) + '</p>';
     if (c) {
+      var qa = queryFor(r);
       h += '<div class="ro-actions">' + goHTML(r) +
-        (r.alt ? '<button type="button" class="btn ghost small" data-copy="' + esc(r.alt) + '">' + esc(t('copyAlt', { n: r.alt })) + '</button>' : '') +
-        '<button type="button" class="linkish" data-toggle-chips>' + esc(t('changeCarrier')) + '</button></div>';
-      h += '<p class="ro-hint ' + c.mode + '">' + esc(t('hint_' + c.id)) + '</p>';
-      h += '<div data-chips-slot hidden>' + chipsHTML(r, t('changeTo')) + '</div>';
+        (qa.alt ? '<button type="button" class="btn ghost small" data-copy="' + esc(qa.alt) + '">' + esc(t('copyAlt', { n: qa.alt })) + '</button>' : '') +
+        '<button type="button" class="linkish" data-toggle-pick>' + esc(t('changeCarrier')) + '</button></div>';
+      h += candChips(r);
+      var hint = hintFor(r);
+      h += '<p class="ro-hint ' + hint.cls + '">' + esc(hint.text) + '</p>';
+      h += '<div data-pick-slot hidden>' + selectHTML(r, 'changeTo') + '</div>';
     } else if (r.note !== 'short') {
-      h += chipsHTML(r, t('pickOpen'));
+      h += selectHTML(r, 'pickOpen');
     }
     readout.innerHTML = h;
   }
@@ -947,12 +1048,12 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
     var h = '<div class="batch-head"><p>' + t('batchHead', { n: list.length, k: known }) + '</p>' +
       '<button type="button" class="btn primary small" id="nextBtn">' + esc(t('openNext')) + ' <span class="arrow">↗</span></button></div><ul class="rows">';
     list.forEach(function (r) {
-      var c = CARRIERS[r.carrier];
-      h += '<li class="row' + (opened[r.num] ? ' opened' : '') + '" data-num="' + esc(r.num) + '">' +
+      var c = BY_ID[r.carrier];
+      h += '<li class="row' + (opened[r.num] ? ' opened' : '') + '">' +
         '<div class="who">' + numHTML(r, true) + pillsHTML(r) + '</div>' +
         '<div class="name">' + boxHTML(c, true) + '<span>' + esc(carrierName(r)) + '</span></div>' +
         '<div class="act">' + (opened[r.num] ? '<span class="done-mark">' + esc(t('opened')) + '</span>' : '') + goHTML(r, true) + '</div>' +
-        (!c && r.note !== 'short' ? chipsHTML(r, t('pickCarrier')) : '') +
+        (!c && r.note !== 'short' ? selectHTML(r, 'pickOpen') : candChips(r)) +
         '</li>';
     });
     readout.innerHTML = h + '</ul>';
@@ -960,15 +1061,15 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
 
   /* ---------- open / history ---------- */
   function afterOpen(r) {
-    var c = CARRIERS[r.carrier];
-    copyText(r.query);
+    var c = BY_ID[r.carrier], l = linkFor(r);
+    copyText(queryFor(r).q);
     opened[r.num] = true;
-    history = history.filter(function (h) { return h.n !== r.num; });
+    history = history.filter(function (x) { return x.n !== r.num; });
     history.unshift({ n: r.num, c: r.carrier, t: Date.now() });
     history = history.slice(0, 30);
     store.set('ct.history', history);
     renderLog();
-    toast(c.mode === 'auto' ? t('toastAuto', { name: cName(c) }) : t('hint_' + c.id));
+    toast(l.auto ? t('toastAuto', { name: cName(c) }) : hintFor(r).text);
     if (results.length > 1) setTimeout(render, 50);
   }
 
@@ -979,35 +1080,38 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
     return r;
   }
 
+  function setOverride(num, id) {
+    overrides[num] = id;
+    var keys = Object.keys(overrides);
+    if (keys.length > 300) delete overrides[keys[0]];
+    store.set('ct.overrides', overrides);
+    render();
+  }
+
   document.addEventListener('click', function (e) {
     var a = e.target.closest('a[data-go]');
     if (a) { afterOpen(resultFromLink(a)); return; }
-
     var pick = e.target.closest('[data-pick]');
-    if (pick) {
-      var num = pick.closest('[data-for]').getAttribute('data-for');
-      overrides[num] = pick.getAttribute('data-pick');
-      var keys = Object.keys(overrides);
-      if (keys.length > 200) delete overrides[keys[0]];
-      store.set('ct.overrides', overrides);
-      render();
-      return;
-    }
-    if (e.target.closest('[data-toggle-chips]')) {
-      var slot = readout.querySelector('[data-chips-slot]');
-      if (slot) slot.hidden = !slot.hidden;
+    if (pick) { setOverride(pick.closest('[data-for]').getAttribute('data-for'), pick.getAttribute('data-pick')); return; }
+    if (e.target.closest('[data-toggle-pick]')) {
+      var slot = readout.querySelector('[data-pick-slot]');
+      if (slot) { slot.hidden = !slot.hidden; if (!slot.hidden) { var s = slot.querySelector('select'); if (s) s.focus(); } }
       return;
     }
     var cp = e.target.closest('[data-copy]');
     if (cp) { copyText(cp.getAttribute('data-copy')); toast(t('toastCopied', { n: cp.getAttribute('data-copy') })); return; }
-
     if (e.target.closest('#nextBtn')) { openNext(); return; }
-
     var fill = e.target.closest('[data-fill]');
     if (fill) { q.value = fill.getAttribute('data-fill'); autosize(); render(); q.focus(); return; }
-
     var lb = e.target.closest('[data-lang]');
     if (lb) { setLang(lb.getAttribute('data-lang')); return; }
+    var fb = e.target.closest('[data-filter]');
+    if (fb) { dirState.filter = fb.getAttribute('data-filter'); renderDirectory(); return; }
+  });
+
+  document.addEventListener('change', function (e) {
+    var s = e.target.closest('select[data-pick-select]');
+    if (s && s.value) setOverride(s.getAttribute('data-pick-select'), s.value);
   });
 
   function openNext() {
@@ -1048,44 +1152,59 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
     var r = detect(nums[0], overrides[nums[0]]);
     if (!r.carrier || (r.conf !== 'sure' && r.conf !== 'manual')) return;
     var w = null;
-    try { w = window.open(linkFor(r), '_blank'); } catch (err) { w = null; }
-    if (w) {
-      try { w.opener = null; } catch (err2) {}
-      afterOpen(r);
-    } else {
-      setTimeout(function () { toast(t('toastBlocked')); }, 60);
-    }
+    try { w = window.open(linkFor(r).href, '_blank'); } catch (err) { w = null; }
+    if (w) { try { w.opener = null; } catch (err2) {} afterOpen(r); }
+    else setTimeout(function () { toast(t('toastBlocked')); }, 60);
   });
 
   $('#clearBtn').addEventListener('click', function () { q.value = ''; autosize(); render(); q.focus(); });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === '/' && document.activeElement !== q && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) {
+    if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) {
       e.preventDefault(); q.focus();
     }
   });
 
-  /* ---------- register + log ---------- */
-  function renderRegister() {
-    var h = '';
-    ORDER.forEach(function (id) {
-      var c = CARRIERS[id];
-      var mode = c.mode === 'copy' ? '<span class="pill">' + esc(t('mode_copy')) + '</span>'
-        : c.verified ? '<span class="pill ok">' + esc(t('mode_auto')) + '</span>' : '<span class="pill warn">' + esc(t('mode_unverified')) + '</span>';
-      h += '<tr><td><span class="cname">' + boxHTML(c, true) + esc(cName(c)) + '</span></td>' +
-        '<td class="prefixes"><b>' + esc(t('reg_cntr')) + '</b> ' + c.cntr.join(' ') +
-        '<br><b>' + esc(t('reg_bl')) + '</b> <span>' + esc(t('reg_blStarts', { p: c.scac.join(' / ') })) + '</span>' +
-        (c.hasRule ? '<br><b>' + esc(t('reg_other')) + '</b> <span>' + esc(t('rule_' + id)) + '</span>' : '') +
-        '</td><td>' + mode + '</td></tr>';
+  /* ---------- carrier directory ---------- */
+  var dirSearch = $('#dirSearch');
+  dirSearch.addEventListener('input', function () { dirState.q = dirSearch.value.trim().toUpperCase(); renderDirectory(); });
+  $('#dirMore').addEventListener('click', function () { dirState.expanded = !dirState.expanded; renderDirectory(); });
+
+  function renderDirectory() {
+    var qy = dirState.q;
+    var list = CARRIERS.filter(function (c) {
+      var m = modeOf(c);
+      if (dirState.filter === 'auto' && m === 'copy') return false;
+      if (dirState.filter === 'copy' && m !== 'copy') return false;
+      if (!qy) return true;
+      var hay = (c.name + ' ' + (c.zh || '') + ' ' + c.cntr.join(' ') + ' ' + c.scac.join(' ')).toUpperCase();
+      return hay.indexOf(qy) > -1;
     });
-    $('#regBody').innerHTML = h;
+    var limited = !qy && dirState.filter === 'all' && !dirState.expanded;
+    var shown = limited ? list.slice(0, DIR_PREVIEW) : list;
+    var h = '';
+    shown.forEach(function (c) {
+      var m = modeOf(c), cls = m === 'copy' ? '' : (m === 'unverified' ? ' warn' : ' ok');
+      var pre = c.cntr.length ? c.cntr.join(' ') : (c.scac.length ? 'B/L ' + c.scac.join(' ') : '—');
+      h += '<li><a href="' + esc(c.page) + '" target="_blank" rel="noopener">' +
+        '<span class="card-top">' + boxHTML(c, true) + '<span class="cname">' + esc(cName(c)) + '</span><span class="pill' + cls + '">' + esc(t('m_' + m)) + '</span></span>' +
+        '<span class="card-pre">' + esc(pre) + '</span>' +
+        '<span class="card-go">' + esc(t('openPage')) + '</span></a></li>';
+    });
+    if (!shown.length) h = '<li class="dir-empty">' + esc(t('noMatch')) + '</li>';
+    $('#dirList').innerHTML = h;
+    $('#dirCount').textContent = String(CARRIERS.length);
+    var more = $('#dirMore');
+    more.hidden = !!qy || dirState.filter !== 'all';
+    more.textContent = dirState.expanded ? t('showLess') : t('showAll', { n: CARRIERS.length });
+    document.querySelectorAll('[data-filter]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-filter') === dirState.filter)); });
   }
 
+  /* ---------- log ---------- */
   function fmtTime(ts) {
     var d = new Date(ts), p = function (n) { return (n < 10 ? '0' : '') + n; };
     return p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
-
   function renderLog() {
     var box = $('#logBox');
     if (!history.length) {
@@ -1095,7 +1214,7 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
     }
     var h = '<ul class="log">';
     history.forEach(function (it) {
-      var r = detect(it.n, it.c), c = CARRIERS[r.carrier];
+      var r = detect(it.n, it.c), c = BY_ID[r.carrier];
       h += '<li><time>' + fmtTime(it.t) + '</time>' +
         '<button type="button" class="lnum" data-fill="' + esc(it.n) + '" title="' + esc(t('fillTitle')) + '">' + esc(it.n) +
         '<span class="lc">' + (c ? esc(cName(c)) : '') + '</span></button>' + goHTML(r, true) + '</li>';
@@ -1112,11 +1231,14 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
     document.querySelectorAll('[data-i18n-html]').forEach(function (el) { el.innerHTML = t(el.getAttribute('data-i18n-html')); });
     document.querySelectorAll('[data-i18n-ph]').forEach(function (el) { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
     document.querySelectorAll('[data-lang]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === prefs.lang)); });
+    var autoN = CARRIERS.filter(function (c) { return !!c.auto; }).length;
+    $('#factCarriers').innerHTML = t('factCarriers', { n: CARRIERS.length });
+    $('#factAuto').innerHTML = t('factAuto', { n: autoN });
   }
   function setLang(l) {
     if (!I18N[l] || l === prefs.lang) return;
     prefs.lang = l; store.set('ct.prefs', prefs);
-    applyStatic(); renderRegister(); renderLog(); render();
+    applyStatic(); renderDirectory(); renderLog(); render();
   }
 
   /* ---------- prefs ---------- */
@@ -1125,26 +1247,31 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
   pIntro.addEventListener('change', function () { prefs.intro = pIntro.checked; store.set('ct.prefs', prefs); });
   pPaste.addEventListener('change', function () { prefs.autoPaste = pPaste.checked; store.set('ct.prefs', prefs); });
 
-  /* ---------- intro ---------- */
-  var intro = $('#intro');
-  (function buildStack() {
-    var ns = 'http://www.w3.org/2000/svg', g = $('#stack');
-    var tiers = [[93, 78, 9], [76, 78, 8], [59, 106, 6]];
-    tiers.forEach(function (tr, ti) {
+  /* ---------- ship drawing ---------- */
+  function drawShip(svg, pid, smoke) {
+    var s = '<defs><pattern id="' + pid + '" width="4" height="20" patternUnits="userSpaceOnUse"><rect class="corr-line" x="3" width="1" height="20"/></pattern></defs>';
+    if (smoke) s += '<circle class="puff p1" cx="50" cy="28" r="7"/><circle class="puff p2" cx="50" cy="28" r="6"/><circle class="puff p3" cx="50" cy="28" r="5"/>';
+    s += '<rect class="house" x="42" y="32" width="16" height="28" rx="2"/><rect class="funnel-band" x="42" y="38" width="16" height="6"/>' +
+      '<rect class="house" x="26" y="60" width="44" height="50" rx="2"/><rect class="roof" x="21" y="57" width="54" height="6" rx="1"/>';
+    [[31, 68, 7], [41, 68, 7], [51, 68, 7], [61, 68, 5], [31, 80, 7], [41, 80, 7], [51, 80, 7]].forEach(function (w) {
+      s += '<rect class="win" x="' + w[0] + '" y="' + w[1] + '" width="' + w[2] + '" height="5" rx="1"/>';
+    });
+    [[93, 78, 9], [76, 78, 8], [59, 106, 6]].forEach(function (tr, ti) {
       for (var i = 0; i < tr[2]; i++) {
-        var x = tr[1] + i * 28, k = ((ti * 3 + i * 5 + (i % 2) * 2) % 6) + 1;
-        var a = document.createElementNS(ns, 'rect');
-        a.setAttribute('x', x); a.setAttribute('y', tr[0]); a.setAttribute('width', 26); a.setAttribute('height', 15); a.setAttribute('rx', 1);
-        a.setAttribute('style', 'fill:var(--k' + k + ')');
-        var b = document.createElementNS(ns, 'rect');
-        b.setAttribute('x', x); b.setAttribute('y', tr[0]); b.setAttribute('width', 26); b.setAttribute('height', 15);
-        b.setAttribute('class', 'corr');
-        g.appendChild(a); g.appendChild(b);
+        var x = tr[1] + i * 28, k = ((ti * 3 + i * 7 + (i % 2) * 2) % 10) + 1;
+        s += '<rect x="' + x + '" y="' + tr[0] + '" width="26" height="15" rx="1" style="fill:var(--p' + k + ')"/>' +
+          '<rect x="' + x + '" y="' + tr[0] + '" width="26" height="15" style="fill:url(#' + pid + ')"/>';
       }
     });
-  })();
+    s += '<path class="hull" d="M12 108 H352 L334 150 H38 Q21 146 12 108 Z"/><rect class="hull-top" x="12" y="106" width="340" height="4"/>' +
+      '<path class="boot" d="M30 140 H338 L334 150 H38 Q33 147 30 140 Z"/>';
+    svg.innerHTML = s;
+  }
+  drawShip($('#introShip'), 'corrIntro', true);
+  drawShip($('#heroShip'), 'corrHero', false);
 
-  var introTimer = null;
+  /* ---------- intro ---------- */
+  var intro = $('#intro'), introTimer = null;
   function closeIntro() {
     if (!document.documentElement.classList.contains('intro-on') || intro.classList.contains('done')) return;
     clearTimeout(introTimer);
@@ -1156,10 +1283,9 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
   function startIntro() {
     document.documentElement.classList.add('intro-on');
     intro.classList.remove('done');
-    var track = intro.querySelector('.ship-track');
-    track.style.animation = 'none'; void track.offsetWidth; track.style.animation = '';
-    var title = intro.querySelector('.title');
-    title.style.animation = 'none'; void title.offsetWidth; title.style.animation = '';
+    ['.ship-track', '.title'].forEach(function (sel) {
+      var el = intro.querySelector(sel); el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    });
     clearTimeout(introTimer);
     introTimer = setTimeout(closeIntro, 3700);
     setTimeout(function () { document.addEventListener('keydown', closeIntro, true); }, 0);
@@ -1173,7 +1299,7 @@ var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳�
   });
 
   applyStatic();
-  renderRegister();
+  renderDirectory();
   renderLog();
   render();
   if (document.documentElement.classList.contains('intro-on')) startIntro();
