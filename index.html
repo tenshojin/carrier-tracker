@@ -586,9 +586,9 @@ var CARRIERS = [
     auto: { c: function (n) { return 'https://elines.coscoshipping.com/ebusiness/cargotracking?trackingType=CONTAINER&number=' + enc(n); },
             b: function (n) { return 'https://elines.coscoshipping.com/ebusiness/cargotracking?trackingType=BILLOFLADING&number=' + enc(n); },
             k: function (n) { return 'https://elines.coscoshipping.com/ebusiness/cargotracking?trackingType=BOOKING&number=' + enc(n); } } },
-  { id: 'oocl', name: 'OOCL', zh: '东方海外', p: 6, cntr: ['OOLU', 'OOCU'], scac: ['OOLU'], strip: ['OOLU'],
+  { id: 'oocl', name: 'OOCL', zh: '东方海外', p: 6, cntr: ['OOLU', 'OOCU'], scac: ['OOLU', 'OOCL'], strip: ['OOLU', 'OOCL'],
     page: 'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx' },
-  { id: 'yangming', name: 'Yang Ming', zh: '阳明', p: 4, cntr: ['YMLU', 'YMMU'], scac: ['YMLU'], strip: ['YMLU'],
+  { id: 'yangming', name: 'Yang Ming', zh: '阳明', p: 4, cntr: ['YMLU', 'YMMU'], scac: ['YMLU', 'YMJA', 'YMPR', 'YMSG'], strip: ['YMLU', 'YMJA', 'YMPR', 'YMSG'],
     page: 'https://www.yangming.com/en/esolution/cargo_tracking' },
   { id: 'hmm', name: 'HMM', zh: '现代商船', p: 1, cntr: ['HDMU', 'HMMU'], scac: ['HDMU'], strip: ['HDMU'],
     page: 'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do' },
@@ -688,7 +688,8 @@ function parseNumbers(text) {
   return out;
 }
 
-/* note codes: short | guess8 | guess9 | guess10 | guess12 | guessOne | guessCma */
+/* note codes: short | fmt_wanhai | fmt_sitc | guess8 | guess9 | guess10 | guess12 | guessYm | guessOne | guessHapag | guessCma | guessZim
+   B/L formats follow the per-carrier patterns published in Vizion's B/L formatting guide. */
 function detect(num, override) {
   var r = { num: num, type: 'unknown', carrier: null, cands: [], conf: 'none', check: null, expected: null, note: '', lessor: false, scac: null };
   if (/^[A-Z]{3}[UJZ]\d{7}$/.test(num)) {
@@ -707,14 +708,24 @@ function detect(num, override) {
     if (sid && num.length > 6) {
       r.carrier = sid; r.cands = [sid]; r.conf = 'sure'; r.type = 'bl'; r.scac = p4;
     } else {
-      var guess = null;
-      if (/^\d{8}$/.test(num)) guess = [['hapag'], 'booking', 'guess8'];
-      else if (/^\d{9}$/.test(num)) guess = [['maersk'], 'bl', 'guess9'];
-      else if (/^\d{10}$/.test(num)) guess = [['cosco', 'oocl'], 'bl', 'guess10'];
-      else if (/^\d{12}$/.test(num)) guess = [['evergreen'], 'bl', 'guess12'];
-      else if (/^[A-Z]{4}\d{8}$/.test(num)) guess = [['one'], 'bl', 'guessOne'];
-      else if (/^[A-Z]{3}\d{7}$/.test(num)) guess = [['cma'], 'bl', 'guessCma'];
-      if (guess) { r.cands = guess[0]; r.carrier = guess[0][0]; r.type = guess[1]; r.note = guess[2]; r.conf = 'guess'; }
+      /* formats distinctive enough to be certain */
+      var sure = null;
+      if (/^\d{3}[A-Z]\d{6}$/.test(num)) sure = 'wanhai';            // Wan Hai B/L: 036C512345
+      else if (/^SIT[A-Z]{2,5}\d{5,7}$/.test(num)) sure = 'sitc';    // SITC B/L: SITSGSMG491701
+      if (sure) { r.carrier = sure; r.cands = [sure]; r.conf = 'sure'; r.type = 'bl'; r.note = 'fmt_' + sure; }
+      else {
+        var guess = null;
+        if (/^\d{8}$/.test(num)) guess = [['hapag'], 'booking', 'guess8'];
+        else if (/^\d{9}$/.test(num)) guess = [['maersk'], 'bl', 'guess9'];
+        else if (/^\d{10}$/.test(num)) guess = [['cosco', 'oocl'], 'bl', 'guess10'];
+        else if (/^\d{12}$/.test(num)) guess = [['evergreen'], 'bl', 'guess12'];
+        else if (/^[A-Z]\d{9}$/.test(num)) guess = [['yangming'], 'bl', 'guessYm'];
+        else if (/^[A-Z][A-Z0-9]{5}\d{6}$/.test(num)) guess = [['one', 'hapag'], 'bl', 'guessOne'];
+        else if (/^[A-Z]{2}[A-Z0-9]{10}$/.test(num)) guess = [['hapag', 'one'], 'bl', 'guessHapag'];
+        else if (/^[A-Z]{3}\d{7}$/.test(num)) guess = [['cma', 'zim'], 'bl', 'guessCma'];
+        else if (/^[A-Z]{3}\d{4,6}$/.test(num)) guess = [['zim'], 'bl', 'guessZim'];
+        if (guess) { r.cands = guess[0]; r.carrier = guess[0][0]; r.type = guess[1]; r.note = guess[2]; r.conf = 'guess'; }
+      }
     }
   }
   if (override && BY_ID[override]) {
@@ -781,8 +792,13 @@ var I18N = {
     note_guess9: 'Digits only (9): probably a Maersk B/L or booking number.',
     note_guess10: 'Digits only (10): usually COSCO or OOCL.',
     note_guess12: 'Digits only (12): probably an Evergreen B/L number.',
-    note_guessOne: '4 letters + 8 digits: probably an ONE B/L number without the ONEY prefix.',
-    note_guessCma: '3 letters + 7 digits: probably a CMA CGM B/L number.',
+    note_guessOne: '12 characters ending in 6 digits: probably an ONE B/L number without the ONEY prefix (could also be Hapag-Lloyd).',
+    note_guessHapag: '12 letters and digits: probably a Hapag-Lloyd B/L number without the HLCU prefix (could also be ONE).',
+    note_guessYm: '1 letter + 9 digits: probably a Yang Ming B/L number.',
+    note_guessCma: '3 letters + 7 digits: usually CMA CGM, sometimes ZIM.',
+    note_guessZim: '3 letters + 4–6 digits: probably a ZIM B/L number.',
+    note_fmt_wanhai: 'Wan Hai B/L format: 3 digits + 1 letter + 6 digits.',
+    note_fmt_sitc: 'Starts with SIT: an SITC B/L number.',
     alsoMaybe: 'Could also be:',
     goAuto: 'Track on {name}', goCopy: 'Copy number & open {name}', goAutoSm: 'Track', goCopySm: 'Copy & open',
     copyAlt: 'Copy as {n}', changeCarrier: 'Wrong carrier? Change it',
@@ -828,8 +844,13 @@ var I18N = {
     note_guess9: '数字のみ9桁のため、Maersk のB/L番号またはブッキング番号と推定しました。',
     note_guess10: '数字のみ10桁は、COSCO か OOCL のことが多いです。',
     note_guess12: '数字のみ12桁のため、Evergreen のB/L番号と推定しました。',
-    note_guessOne: '英字4桁＋数字8桁のため、接頭辞 ONEY を除いた ONE のB/L番号と推定しました。',
-    note_guessCma: '英字3桁＋数字7桁のため、CMA CGM のB/L番号と推定しました。',
+    note_guessOne: '末尾6桁が数字の12桁のため、接頭辞 ONEY を除いた ONE のB/L番号と推定しました（Hapag-Lloyd の可能性もあります）。',
+    note_guessHapag: '英数字12桁のため、接頭辞 HLCU を除いた Hapag-Lloyd のB/L番号と推定しました（ONE の可能性もあります）。',
+    note_guessYm: '英字1桁＋数字9桁のため、Yang Ming のB/L番号と推定しました。',
+    note_guessCma: '英字3桁＋数字7桁は、多くが CMA CGM、まれに ZIM です。',
+    note_guessZim: '英字3桁＋数字4〜6桁のため、ZIM のB/L番号と推定しました。',
+    note_fmt_wanhai: 'Wan Hai のB/L番号の形式です（数字3桁＋英字1桁＋数字6桁）。',
+    note_fmt_sitc: 'SIT で始まる SITC のB/L番号です。',
     alsoMaybe: 'ほかの候補：',
     goAuto: '{name} の公式サイトで検索', goCopy: '番号をコピーして {name} を開く', goAutoSm: '検索', goCopySm: 'コピーして開く',
     copyAlt: '{n} としてコピー', changeCarrier: '船社が違う場合は変更',
@@ -875,8 +896,13 @@ var I18N = {
     note_guess9: '9 位纯数字，推测是 Maersk 的提单号或订舱号。',
     note_guess10: '10 位纯数字，通常是 COSCO 或 OOCL。',
     note_guess12: '12 位纯数字，推测是长荣的提单号。',
-    note_guessOne: '4 个字母加 8 位数字，推测是去掉 ONEY 前缀的 ONE 提单号。',
-    note_guessCma: '3 个字母加 7 位数字，推测是 CMA CGM 的提单号。',
+    note_guessOne: '12 位、末尾 6 位是数字，推测是去掉 ONEY 前缀的 ONE 提单号（也可能是 Hapag-Lloyd）。',
+    note_guessHapag: '12 位字母数字，推测是去掉 HLCU 前缀的 Hapag-Lloyd 提单号（也可能是 ONE）。',
+    note_guessYm: '1 个字母加 9 位数字，推测是阳明的提单号。',
+    note_guessCma: '3 个字母加 7 位数字，多数是 CMA CGM，少数是 ZIM。',
+    note_guessZim: '3 个字母加 4–6 位数字，推测是 ZIM 的提单号。',
+    note_fmt_wanhai: '万海提单号格式：3 位数字 + 1 个字母 + 6 位数字。',
+    note_fmt_sitc: '以 SIT 开头，是海丰（SITC）的提单号。',
     alsoMaybe: '也可能是：',
     goAuto: '在 {name} 官网查询', goCopy: '复制单号并打开 {name}', goAutoSm: '查询', goCopySm: '复制并打开',
     copyAlt: '复制为 {n}', changeCarrier: '不是这家？改选船社',
@@ -914,7 +940,7 @@ var I18N = {
   var DIR_PREVIEW = 9;
 
   var q = $('#q'), readout = $('#readout');
-  var EXAMPLES = ['MRKU4821076', 'ONEU7305121', 'HLXU2310542', 'CMAU7302917', 'MSCU7351024', 'CBHU7305620', 'WHLU5590317', 'TGHU8820148', 'MSKU1234567', '6123456789'];
+  var EXAMPLES = ['MRKU4821076', 'ONEU7305121', 'HLXU2310542', 'CMAU7302917', 'MSCU7351024', 'CBHU7305620', 'WHLU5590317', '036C512345', 'TGHU8820148', 'MSKU1234567', '6123456789'];
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function t(key, vars) {
@@ -976,7 +1002,7 @@ var I18N = {
     if (r.note === 'short') return t('note_short');
     if (r.lessor && !r.carrier) return t('note_lessor');
     if (!r.carrier) return t('note_none');
-    if (r.note && r.conf === 'guess') return t('note_' + r.note);
+    if (r.note && (r.conf === 'guess' || r.note.indexOf('fmt_') === 0)) return t('note_' + r.note);
     return '';
   }
   function selectHTML(r, labelKey) {
