@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>船社追踪一键查</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Saira+Stencil+One&display=swap">
+<script>
+  (function () {
+    var p = {}, on = true;
+    try { p = JSON.parse(localStorage.getItem('ct.prefs') || '{}') || {}; } catch (e) {}
+    if (p.intro === false) on = false;
+    try { if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) on = false; } catch (e) {}
+    document.documentElement.lang = ({ en: 'en', ja: 'ja', zh: 'zh-CN' })[p.lang] || 'en';
+    if (on) document.documentElement.classList.add('intro-on');
+  })();
+</script>
+<style>
+  /* Layout: one operating column, like a terminal gate desk — number input on top, readout directly below, query log and carrier register underneath. */
+  :root {
+    --bg: #EDF1F3;
+    --surface: #FFFFFF;
+    --surface-2: #F5F8F9;
+    --ink: #13232E;
+    --muted: #5A6A74;
+    --line: #D4DCE1;
+    --band: #15314A;
+    --band-ink: #EAF2F7;
+    --accent: #C4502B;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #F6E0D6;
+    --focus: #1F7A96;
+    --ok: #2C7A4C;
+    --ok-soft: #DDF0E3;
+    --warn: #9A6514;
+    --warn-soft: #F6EAD2;
+    --bad: #B0382B;
+    --bad-soft: #F7DEDA;
+    --shadow: rgba(19, 35, 46, .28);
+    --box-shade: rgba(0, 0, 0, .22);
+
+    --c-maersk: #3A8BBF;
+    --c-hapag: #E06D27;
+    --c-cma: #24457E;
+    --c-msc: #B9942C;
+    --c-wanhai: #2F8B68;
+    --c-none: #8D9AA3;
+
+    --sky1: #A9DAEA;
+    --sky2: #EEF8FA;
+    --sun: #FFD27A;
+    --sun-glow: rgba(255, 210, 122, .55);
+    --cloud: #FFFFFF;
+    --sea1: #3A93B3;
+    --sea2: #1D6886;
+    --sea3: #134A63;
+    --foam: rgba(255, 255, 255, .75);
+    --hull: #1C3247;
+    --hull-top: #2D4A63;
+    --house: #F4F6F7;
+    --house-roof: #D3DADF;
+    --window: #2C4A60;
+    --smoke: #C9D3D9;
+    --intro-ink: #13324A;
+    --k1: #C4502B; --k2: #2F8B68; --k3: #D9A33A; --k4: #3A6FB0; --k5: #8C3B3B; --k6: #6E7F8A;
+
+    --font-display: "Saira Stencil One", "Arial Narrow", Impact, sans-serif;
+    --font-body: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, Consolas, "SFMono-Regular", monospace;
+  }
+  :root[lang="ja"] { --font-body: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, system-ui, sans-serif; }
+  :root[lang="en"] { --font-body: "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0C161D; --surface: #13212B; --surface-2: #182A36; --ink: #E2EBF0; --muted: #93A5B0; --line: #253945;
+      --band: #0F2638; --band-ink: #E2EEF5; --accent: #E0693F; --accent-ink: #FFFFFF; --accent-soft: #3A231A;
+      --focus: #5BB4D0; --ok: #6CC795; --ok-soft: #173326; --warn: #E2B25A; --warn-soft: #36290F; --bad: #F08A7C; --bad-soft: #3B1C18;
+      --shadow: rgba(0, 0, 0, .6); --box-shade: rgba(0, 0, 0, .3);
+      --c-maersk: #4FA1D4; --c-hapag: #EE8240; --c-cma: #4A6FB0; --c-msc: #CCA640; --c-wanhai: #3FA37E; --c-none: #6D7C86;
+      --sky1: #0B1D2E; --sky2: #1F4560; --sun: #EDE6C9; --sun-glow: rgba(237, 230, 201, .25); --cloud: #2E4C62;
+      --sea1: #1E5672; --sea2: #133F57; --sea3: #0B2B3D; --foam: rgba(210, 232, 243, .45);
+      --hull: #2F4B64; --hull-top: #45657F; --house: #D5DDE2; --house-roof: #A9B6BE; --window: #F2D27C; --smoke: #6F8796;
+      --intro-ink: #E6F0F6;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0C161D; --surface: #13212B; --surface-2: #182A36; --ink: #E2EBF0; --muted: #93A5B0; --line: #253945;
+    --band: #0F2638; --band-ink: #E2EEF5; --accent: #E0693F; --accent-ink: #FFFFFF; --accent-soft: #3A231A;
+    --focus: #5BB4D0; --ok: #6CC795; --ok-soft: #173326; --warn: #E2B25A; --warn-soft: #36290F; --bad: #F08A7C; --bad-soft: #3B1C18;
+    --shadow: rgba(0, 0, 0, .6); --box-shade: rgba(0, 0, 0, .3);
+    --c-maersk: #4FA1D4; --c-hapag: #EE8240; --c-cma: #4A6FB0; --c-msc: #CCA640; --c-wanhai: #3FA37E; --c-none: #6D7C86;
+    --sky1: #0B1D2E; --sky2: #1F4560; --sun: #EDE6C9; --sun-glow: rgba(237, 230, 201, .25); --cloud: #2E4C62;
+    --sea1: #1E5672; --sea2: #133F57; --sea3: #0B2B3D; --foam: rgba(210, 232, 243, .45);
+    --hull: #2F4B64; --hull-top: #45657F; --house: #D5DDE2; --house-roof: #A9B6BE; --window: #F2D27C; --smoke: #6F8796;
+    --intro-ink: #E6F0F6;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 var(--font-body);
+  }
+  .gutter {
+    max-width: 880px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  /* ---------- header band ---------- */
+  .band { background: var(--band); color: var(--band-ink); }
+  .band .gutter { padding-block: 16px 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark { width: 40px; height: 26px; flex: none; }
+  .brand h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: .03em; line-height: 1.2; }
+  .brand .tag { display: block; font-family: var(--font-display); font-size: 12px; letter-spacing: .22em; opacity: .7; }
+  .band-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .band-meta { font-size: 13px; opacity: .78; }
+  .lang {
+    display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--band-ink) 28%, transparent);
+  }
+  .lang button {
+    background: transparent; color: var(--band-ink); border: 0; cursor: pointer;
+    padding: 4px 11px; border-radius: 999px; font: 500 13px/1.3 var(--font-body);
+  }
+  .lang button:hover { background: color-mix(in srgb, var(--band-ink) 12%, transparent); }
+  .lang button[aria-pressed="true"] { background: var(--band-ink); color: var(--band); }
+  .band-wave { display: block; width: 100%; height: 12px; }
+  .band-wave path { fill: var(--band); }
+
+  main.gutter { padding-block: 22px 40px; display: grid; gap: 30px; }
+
+  /* ---------- input desk ---------- */
+  .desk {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    display: grid;
+    gap: 14px;
+    box-shadow: 0 18px 36px -26px var(--shadow);
+  }
+  .desk-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .desk-label label { font-weight: 700; font-size: 15px; }
+  .keys { font-size: 12.5px; color: var(--muted); }
+  kbd {
+    font-family: var(--font-mono); font-size: 11.5px; padding: 1px 6px; border-radius: 4px;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+  }
+  .field { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+  #q {
+    flex: 1 1 320px; min-width: 0;
+    font: 600 20px/1.45 var(--font-mono); letter-spacing: .05em;
+    padding: 14px 16px; border: 2px solid var(--line); border-radius: 10px;
+    background: var(--surface-2); color: var(--ink);
+    resize: none; min-height: 60px; max-height: 260px; overflow-y: auto;
+    text-transform: uppercase;
+  }
+  #q::placeholder { text-transform: none; font: 400 15px/1.6 var(--font-body); letter-spacing: 0; color: var(--muted); }
+  #q:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 18%, transparent); }
+  .field .btn { flex: none; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 18px; border-radius: 10px; border: 1px solid transparent;
+    font: 600 15px/1.2 var(--font-body); text-decoration: none; cursor: pointer;
+    background: transparent; color: var(--ink);
+    transition: transform .12s ease, filter .12s ease, background-color .12s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { filter: brightness(1.07); }
+  .btn.ghost { border-color: var(--line); }
+  .btn.ghost:hover { background: var(--surface-2); }
+  .btn.small { padding: 8px 12px; font-size: 13.5px; border-radius: 8px; }
+  .btn .arrow { font-family: var(--font-mono); font-weight: 400; }
+  .linkish { background: none; border: 0; padding: 0; color: var(--focus); font: inherit; font-size: 13.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---------- readout ---------- */
+  .readout {
+    border-top: 1px dashed var(--line);
+    padding-top: 16px;
+    display: grid; gap: 12px;
+  }
+  .ro-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ro-name { font-size: 17px; font-weight: 700; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { font-size: 12px; line-height: 1.5; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+
+  .num { font: 600 24px/1.3 var(--font-mono); letter-spacing: .06em; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; overflow-wrap: anywhere; }
+  .num.sm { font-size: 15px; gap: 6px; }
+  .cd {
+    display: inline-grid; place-items: center; min-width: 1.45em; height: 1.45em; padding: 0 .18em;
+    border: 2px solid currentColor; border-radius: 3px; line-height: 1;
+  }
+  .cd.bad { color: var(--bad); }
+  .ro-note { margin: 0; font-size: 14px; color: var(--muted); }
+  .ro-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .ro-hint { margin: 0; font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: flex-start; }
+  .ro-hint::before { content: ""; flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 2px; background: var(--hint-c, var(--muted)); }
+  .ro-hint.auto { --hint-c: var(--ok); }
+  .ro-hint.copy { --hint-c: var(--warn); }
+
+  .idle { display: grid; gap: 8px; color: var(--muted); font-size: 14px; }
+  .idle .demo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--ink); }
+  .idle .demo .to { color: var(--muted); }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .chips .lbl { font-size: 13px; color: var(--muted); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px 6px 8px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+    font: 500 13.5px/1.2 var(--font-body);
+  }
+  .chip:hover { border-color: var(--focus); }
+  .chip.mono { font-family: var(--font-mono); font-size: 13px; padding-left: 11px; }
+
+  /* mini container badge: the carrier is shown as a painted box */
+  .badge { display: inline-flex; align-items: center; gap: 8px; }
+  .box {
+    --c: var(--c-none);
+    width: 30px; height: 18px; flex: none; border-radius: 2px;
+    background-color: var(--c);
+    background-image: repeating-linear-gradient(90deg, transparent 0 3px, var(--box-shade) 3px 4px);
+    box-shadow: inset 0 0 0 1.5px var(--box-shade);
+  }
+  .box.sm { width: 22px; height: 13px; }
+
+  /* ---------- batch ---------- */
+  .batch-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .batch-head p { margin: 0; font-size: 14px; color: var(--muted); }
+  .batch-head strong { color: var(--ink); }
+  .rows { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .row {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 8px 14px; align-items: center;
+    padding: 12px 14px; border-top: 1px solid var(--line); background: var(--surface);
+  }
+  .row:first-child { border-top: 0; }
+  .row.opened { background: var(--surface-2); }
+  .row .who { display: grid; gap: 4px; min-width: 0; }
+  .row .name { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .row .act { display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
+  .row .chips { grid-column: 1 / -1; }
+  .done-mark { font-size: 12.5px; color: var(--ok); white-space: nowrap; }
+
+  /* ---------- sections ---------- */
+  section h2 { margin: 0 0 12px; font-size: 16px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  section h2 .eyebrow { font-family: var(--font-display); font-weight: 400; font-size: 12px; letter-spacing: .2em; color: var(--muted); }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  .reg { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .reg .pill { white-space: normal; display: inline-block; }
+  .reg th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; letter-spacing: .06em; padding: 9px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  .reg td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .reg tr:last-child td { border-bottom: 0; }
+  .reg .cname { font-weight: 600; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .prefixes { font-family: var(--font-mono); font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .prefixes b { font-family: var(--font-body); font-weight: 500; color: var(--ink); font-size: 12px; }
+  .prefixes span { font-family: var(--font-body); }
+  .fine { font-size: 12.5px; color: var(--muted); margin: 10px 2px 0; }
+
+  .log { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+  .log li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); }
+  .log li:first-child { border-top: 0; }
+  .log time { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .log .lnum { background: none; border: 0; padding: 0; color: var(--ink); font: 600 14px/1.3 var(--font-mono); letter-spacing: .03em; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+  .log .lnum:hover { color: var(--focus); }
+  .log .lc { display: block; font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--muted); letter-spacing: 0; }
+  .log-empty { border: 1px dashed var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; font-size: 14px; color: var(--muted); background: var(--surface); }
+  .log-tools { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+  footer.gutter { padding-block: 0 36px; display: grid; gap: 12px; font-size: 13px; color: var(--muted); }
+  footer p { margin: 0; }
+  .prefs { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+  .prefs label { display: inline-flex; gap: 7px; align-items: center; cursor: pointer; color: var(--ink); }
+  .prefs input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 50;
+    transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    max-width: min(560px, calc(100vw - 32px));
+    background: var(--ink); color: var(--bg); padding: 11px 16px; border-radius: 10px; font-size: 14px;
+    box-shadow: 0 12px 30px -12px var(--shadow);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- intro: a container ship crossing the sea ---------- */
+  #intro { display: none; }
+  .intro-on #intro {
+    display: block; position: fixed; inset: 0; z-index: 100; overflow: hidden; cursor: pointer;
+    background: linear-gradient(var(--sky1), var(--sky2) 64%);
+    transition: opacity .6s ease, visibility .6s;
+  }
+  .intro-on #intro.done { opacity: 0; visibility: hidden; }
+  #intro .sun {
+    position: absolute; top: 13vh; right: 15vw; width: clamp(56px, 9vw, 104px); aspect-ratio: 1; border-radius: 50%;
+    background: var(--sun); box-shadow: 0 0 70px 14px var(--sun-glow);
+  }
+  #intro .cloud { position: absolute; width: 120px; height: 24px; border-radius: 20px; background: var(--cloud); opacity: .92; }
+  #intro .cloud::before, #intro .cloud::after { content: ""; position: absolute; background: inherit; border-radius: 50%; }
+  #intro .cloud::before { width: 52px; height: 52px; top: -28px; left: 20px; }
+  #intro .cloud::after { width: 40px; height: 40px; top: -19px; left: 60px; }
+  #intro .c1 { top: 24vh; left: 8vw; animation: drift 10s linear infinite alternate; }
+  #intro .c2 { top: 34vh; left: 52vw; scale: .7; animation: drift 13s linear infinite alternate-reverse; }
+  @keyframes drift { to { translate: 50px 0; } }
+
+  #intro .title {
+    position: absolute; left: 0; right: 0; top: 11vh; text-align: center; color: var(--intro-ink);
+    padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+    animation: rise .7s .25s ease-out both;
+  }
+  #intro .title b { display: block; font-size: clamp(30px, 5.4vw, 54px); font-weight: 700; letter-spacing: .06em; text-wrap: balance; }
+  #intro .title span { display: block; margin-top: 6px; font-family: var(--font-display); font-size: clamp(12px, 1.6vw, 16px); letter-spacing: .36em; opacity: .75; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+
+  #intro .wave { position: absolute; left: 0; bottom: 0; width: 200%; animation: swell linear infinite; }
+  #intro .wave svg { display: block; width: 100%; height: 100%; }
+  #intro .w-back { height: 36vh; animation-duration: 9s; }
+  #intro .w-back path { fill: var(--sea1); }
+  #intro .w-mid { height: 30vh; animation-duration: 6.5s; animation-direction: reverse; }
+  #intro .w-mid path { fill: var(--sea2); }
+  #intro .w-front { height: 23vh; animation-duration: 4.6s; }
+  #intro .w-front path.fill { fill: var(--sea3); }
+  #intro .w-front path.crest { fill: none; stroke: var(--foam); stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+  @keyframes swell { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  #intro .ship-track {
+    position: absolute; left: 0;
+    width: clamp(250px, 38vw, 470px);
+    bottom: calc(27vh - clamp(21px, 3.2vw, 39px));
+    animation: sail 3.6s cubic-bezier(.42, .02, .45, 1) forwards;
+  }
+  @keyframes sail { from { transform: translateX(-105%); } to { transform: translateX(calc(100vw + 5%)); } }
+  #intro .ship { display: block; width: 100%; height: auto; transform-origin: 50% 82%; animation: bob 1.25s ease-in-out infinite alternate; }
+  @keyframes bob { from { transform: translateY(0) rotate(-1.1deg); } to { transform: translateY(5px) rotate(.9deg); } }
+  #intro .hull { fill: var(--hull); }
+  #intro .hull-top { fill: var(--hull-top); }
+  #intro .boot { fill: var(--k1); }
+  #intro .house { fill: var(--house); }
+  #intro .roof { fill: var(--house-roof); }
+  #intro .win { fill: var(--window); }
+  #intro .funnel-band { fill: var(--k1); }
+  #intro .corr { fill: url(#corr); }
+  #intro .corr-line { fill: var(--box-shade); }
+  #intro .puff { fill: var(--smoke); transform-box: fill-box; transform-origin: center; animation: puff 1.5s ease-out infinite; opacity: 0; }
+  #intro .p2 { animation-delay: .5s; }
+  #intro .p3 { animation-delay: 1s; }
+  @keyframes puff { 0% { opacity: .85; transform: translate(0, 0) scale(.6); } 100% { opacity: 0; transform: translate(-22px, -34px) scale(1.9); } }
+
+  #intro .skip {
+    position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--surface) 82%, transparent); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font: 500 13px/1 var(--font-body); cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .intro-on #intro { display: none; }
+    .btn, #toast { transition: none; }
+  }
+  @media (max-width: 520px) {
+    .desk { padding: 16px; }
+    #q { font-size: 18px; }
+    .row { grid-template-columns: minmax(0, 1fr) auto; }
+    .row .who { grid-column: 1 / -1; }
+    .num { font-size: 21px; }
+  }
+</style>
+
+</head>
+<body>
+<div id="intro" aria-hidden="true">
+  <div class="sun"></div>
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="title"><b data-i18n="appName">Carrier Tracker</b><span data-i18n="tag">ONE-CLICK LOOKUP</span></div>
+  <div class="wave w-back"><svg viewBox="0 0 1600 100" preserveAspectRatio="none"><path d="M0 18 Q100 4 200 18 T400 18 T600 18 T800 18 T1000 18 T1200 18 T1400 18 T1600 18 V100 H0 Z"/></svg></div>
+  <div class="wave w-mid"><svg viewBox="0 0 1600 100" preserveAspectRatio="none"><path d="M0 22 Q100 8 200 22 T400 22 T600 22 T800 22 T1000 22 T1200 22 T1400 22 T1600 22 V100 H0 Z"/></svg></div>
+  <div class="ship-track">
+    <svg class="ship" viewBox="0 0 360 170" aria-hidden="true">
+      <defs>
+        <pattern id="corr" width="4" height="20" patternUnits="userSpaceOnUse"><rect class="corr-line" x="3" width="1" height="20"/></pattern>
+      </defs>
+      <circle class="puff p1" cx="50" cy="28" r="7"/>
+      <circle class="puff p2" cx="50" cy="28" r="6"/>
+      <circle class="puff p3" cx="50" cy="28" r="5"/>
+      <rect class="house" x="42" y="32" width="16" height="28" rx="2"/>
+      <rect class="funnel-band" x="42" y="38" width="16" height="6"/>
+      <rect class="house" x="26" y="60" width="44" height="50" rx="2"/>
+      <rect class="roof" x="21" y="57" width="54" height="6" rx="1"/>
+      <g>
+        <rect class="win" x="31" y="68" width="7" height="5" rx="1"/>
+        <rect class="win" x="41" y="68" width="7" height="5" rx="1"/>
+        <rect class="win" x="51" y="68" width="7" height="5" rx="1"/>
+        <rect class="win" x="61" y="68" width="5" height="5" rx="1"/>
+        <rect class="win" x="31" y="80" width="7" height="5" rx="1"/>
+        <rect class="win" x="41" y="80" width="7" height="5" rx="1"/>
+        <rect class="win" x="51" y="80" width="7" height="5" rx="1"/>
+      </g>
+      <g id="stack"></g>
+      <path class="hull" d="M12 108 H352 L334 150 H38 Q21 146 12 108 Z"/>
+      <rect class="hull-top" x="12" y="106" width="340" height="4"/>
+      <path class="boot" d="M30 140 H338 L334 150 H38 Q33 147 30 140 Z"/>
+    </svg>
+  </div>
+  <div class="wave w-front"><svg viewBox="0 0 1600 100" preserveAspectRatio="none"><path class="fill" d="M0 26 Q100 12 200 26 T400 26 T600 26 T800 26 T1000 26 T1200 26 T1400 26 T1600 26 V100 H0 Z"/><path class="crest" d="M0 26 Q100 12 200 26 T400 26 T600 26 T800 26 T1000 26 T1200 26 T1400 26 T1600 26"/></svg></div>
+  <button class="skip" type="button" id="skipIntro" data-i18n="skip">Skip ›</button>
+</div>
+
+<header class="band">
+  <div class="gutter">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 26" aria-hidden="true">
+        <rect x="1" y="1" width="38" height="24" rx="2" fill="var(--accent)"/>
+        <g fill="var(--box-shade)"><rect x="6" y="4" width="2" height="18"/><rect x="11" y="4" width="2" height="18"/><rect x="16" y="4" width="2" height="18"/><rect x="21" y="4" width="2" height="18"/><rect x="26" y="4" width="2" height="18"/><rect x="31" y="4" width="2" height="18"/></g>
+      </svg>
+      <div>
+        <h1 data-i18n="appName">Carrier Tracker</h1>
+        <span class="tag" data-i18n="tag">ONE-CLICK LOOKUP</span>
+      </div>
+    </div>
+    <div class="band-right">
+      <span class="band-meta" data-i18n="bandMeta">MBL / container no. → carrier detected → official site</span>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ja">日本語</button>
+        <button type="button" data-lang="zh">中文</button>
+      </div>
+    </div>
+  </div>
+  <svg class="band-wave" viewBox="0 0 1600 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 V5 Q50 12 100 5 T200 5 T300 5 T400 5 T500 5 T600 5 T700 5 T800 5 T900 5 T1000 5 T1100 5 T1200 5 T1300 5 T1400 5 T1500 5 T1600 5 V0 Z"/></svg>
+</header>
+
+<main class="gutter">
+  <div class="desk">
+    <div class="desk-label">
+      <label for="q" data-i18n="inputLabel">Enter an MBL or container number</label>
+      <span class="keys" data-i18n-html="keys"></span>
+    </div>
+    <div class="field">
+      <textarea id="q" rows="1" spellcheck="false" autocomplete="off" autocapitalize="characters" data-i18n-ph="placeholder"></textarea>
+      <button class="btn ghost" type="button" id="clearBtn" data-i18n="clear">Clear</button>
+    </div>
+    <div id="readout" class="readout" aria-live="polite"></div>
+  </div>
+
+  <div class="two">
+    <section aria-labelledby="logTitle">
+      <h2 id="logTitle"><span data-i18n="logTitle">Recent lookups</span> <span class="eyebrow">LOG</span></h2>
+      <div id="logBox"></div>
+    </section>
+
+    <section aria-labelledby="regTitle">
+      <h2 id="regTitle"><span data-i18n="regTitle">Carriers</span> <span class="eyebrow">REGISTER</span></h2>
+      <div class="table-wrap">
+        <table class="reg">
+          <thead><tr><th data-i18n="th1">Carrier</th><th data-i18n="th2">Detected by</th><th data-i18n="th3">How it opens</th></tr></thead>
+          <tbody id="regBody"></tbody>
+        </table>
+      </div>
+      <p class="fine" data-i18n="lessorFine"></p>
+    </section>
+  </div>
+</main>
+
+<footer class="gutter">
+  <div class="prefs">
+    <label><input type="checkbox" id="prefIntro"> <span data-i18n="prefIntro">Opening animation</span></label>
+    <label><input type="checkbox" id="prefPaste"> <span data-i18n="prefPaste"></span></label>
+    <button class="linkish" type="button" id="replayIntro" data-i18n="replay">Replay animation</button>
+  </div>
+  <p data-i18n="privacy"></p>
+  <p id="framedNote" data-i18n="framedNote" hidden></p>
+</footer>
+
+<div id="toast" role="status"></div>
+
+<script id="core">
+/* ---------- carrier rules (pure, testable) ---------- */
+var CARRIERS = {
+  maersk: {
+    id: 'maersk', name: 'Maersk', color: 'var(--c-maersk)', mode: 'auto', verified: true, hasRule: true,
+    cntr: ['MAEU', 'MSKU', 'MRKU', 'MRSU', 'MSFU', 'MNBU', 'MMAU', 'SUDU', 'SEAU'], scac: ['MAEU'],
+    url: function (n) { return 'https://www.maersk.com/tracking/' + encodeURIComponent(n); }
+  },
+  hapag: {
+    id: 'hapag', name: 'Hapag-Lloyd', color: 'var(--c-hapag)', mode: 'auto', verified: false, hasRule: true,
+    cntr: ['HLCU', 'HLXU', 'HLBU', 'UACU'], scac: ['HLCU'],
+    url: function (n, type) {
+      return type === 'container'
+        ? 'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html?container=' + encodeURIComponent(n)
+        : 'https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html?blno=' + encodeURIComponent(n);
+    }
+  },
+  cma: {
+    id: 'cma', name: 'CMA CGM', color: 'var(--c-cma)', mode: 'copy', hasRule: true,
+    cntr: ['CMAU', 'CGMU', 'ECMU', 'AMCU'], scac: ['CMDU'],
+    page: 'https://www.cma-cgm.com/ebusiness/tracking'
+  },
+  msc: {
+    id: 'msc', name: 'MSC', color: 'var(--c-msc)', mode: 'copy',
+    cntr: ['MSCU', 'MEDU', 'MSDU', 'MSMU'], scac: ['MEDU', 'MSCU'],
+    page: 'https://www.msc.com/en/track-a-shipment'
+  },
+  wanhai: {
+    id: 'wanhai', name: 'Wan Hai', color: 'var(--c-wanhai)', mode: 'copy',
+    cntr: ['WHLU', 'WHSU'], scac: ['WHLC'],
+    page: 'https://www.wanhai.com/views/cargo_track_v2/tracking_query.xhtml'
+  }
+};
+var ORDER = ['maersk', 'hapag', 'cma', 'msc', 'wanhai'];
+
+var OTHER = {
+  ONEY: 'ONE', ONEU: 'ONE', EGLV: 'Evergreen', EGHU: 'Evergreen', EISU: 'Evergreen', EMCU: 'Evergreen',
+  COSU: 'COSCO', CBHU: 'COSCO', CSNU: 'COSCO', OOLU: 'OOCL', OOCU: 'OOCL',
+  YMLU: 'Yang Ming', YMMU: 'Yang Ming', ZIMU: 'ZIM', HDMU: 'HMM', KMTU: 'KMTC', KMTC: 'KMTC',
+  SITU: 'SITC', APLU: 'APL', APZU: 'APL', APHU: 'APL'
+};
+var LESSORS = ['TGHU', 'TCNU', 'TEMU', 'TRLU', 'TCLU', 'TTNU', 'TGBU', 'TCKU', 'TRHU', 'TLLU', 'TIFU', 'FSCU', 'CAIU', 'CAXU',
+  'BMOU', 'GESU', 'SEGU', 'DFSU', 'FCIU', 'GLDU', 'INKU', 'IPXU', 'UETU', 'XINU', 'BSIU', 'CXDU', 'DRYU', 'GATU', 'CRXU',
+  'TXGU', 'BEAU', 'FFAU', 'TIIU'];
+
+var LETTER_VAL = (function () {
+  var m = {}, v = 10, abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (var i = 0; i < abc.length; i++) { if (v % 11 === 0) v++; m[abc[i]] = v; v++; }
+  return m;
+})();
+
+function isoCheckDigit(s) {
+  var sum = 0;
+  for (var i = 0; i < 10; i++) {
+    var ch = s[i];
+    var val = /[0-9]/.test(ch) ? +ch : LETTER_VAL[ch];
+    sum += val * Math.pow(2, i);
+  }
+  var d = sum % 11;
+  return d === 10 ? 0 : d;
+}
+
+function parseNumbers(text) {
+  var t = String(text || '').normalize('NFKC').toUpperCase();
+  // "MSKU 123456 7" / "MSKU-123456-7" → one container number
+  t = t.replace(/([A-Z]{3}[UJZ])[\s\-]*(\d{6})[\s\-]*(\d)(?!\d)/g, '$1$2$3');
+  var parts = t.split(/[\s,，、;；\/|]+/);
+  var out = [], seen = {};
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i].replace(/[^A-Z0-9]/g, '');
+    if (p && !seen[p]) { seen[p] = 1; out.push(p); }
+  }
+  return out;
+}
+
+function carrierByCntr(owner) {
+  for (var i = 0; i < ORDER.length; i++) if (CARRIERS[ORDER[i]].cntr.indexOf(owner) > -1) return CARRIERS[ORDER[i]];
+  return null;
+}
+function carrierByScac(p4) {
+  for (var i = 0; i < ORDER.length; i++) if (CARRIERS[ORDER[i]].scac.indexOf(p4) > -1) return CARRIERS[ORDER[i]];
+  return null;
+}
+
+/* note codes: short | guess9 | guess8 | guessCma */
+function detect(num, override) {
+  var r = { num: num, type: 'unknown', carrier: null, conf: 'none', check: null, expected: null, note: '', other: null, lessor: false, query: num, alt: null };
+  if (/^[A-Z]{3}[UJZ]\d{7}$/.test(num)) {
+    var exp = isoCheckDigit(num), ok = exp === +num[10], owner = num.slice(0, 4);
+    var c = carrierByCntr(owner);
+    r.check = ok; r.expected = exp; r.type = 'container';
+    if (c) {
+      r.carrier = c.id; r.conf = 'sure';
+      if (!ok && c.scac.indexOf(owner) > -1) r.type = 'maybe';
+    } else if (LESSORS.indexOf(owner) > -1) {
+      r.lessor = true;
+    } else if (OTHER[owner]) {
+      r.other = OTHER[owner];
+    }
+  } else if (num.length < 6) {
+    r.note = 'short';
+  } else {
+    var p4 = num.slice(0, 4), cs = carrierByScac(p4);
+    if (cs && num.length > 6) {
+      r.carrier = cs.id; r.conf = 'sure'; r.type = 'bl';
+      if (cs.id === 'maersk' && /^MAEU\d{9,10}$/.test(num)) r.query = num.slice(4);
+      else r.alt = num.slice(4);
+    } else if (OTHER[p4] && num.length > 6) {
+      r.type = 'bl'; r.other = OTHER[p4];
+    } else if (/^\d{9,10}$/.test(num)) {
+      r.carrier = 'maersk'; r.conf = 'guess'; r.type = 'bl'; r.note = 'guess9';
+    } else if (/^\d{8}$/.test(num)) {
+      r.carrier = 'hapag'; r.conf = 'guess'; r.type = 'booking'; r.note = 'guess8';
+    } else if (/^[A-Z]{3}\d{7}$/.test(num)) {
+      r.carrier = 'cma'; r.conf = 'guess'; r.type = 'bl'; r.note = 'guessCma';
+    }
+  }
+  if (override && CARRIERS[override] && override !== r.carrier) { r.carrier = override; r.conf = 'manual'; }
+  else if (override && override === r.carrier && r.conf === 'guess') { r.conf = 'manual'; }
+  return r;
+}
+
+function linkFor(r) {
+  var c = CARRIERS[r.carrier];
+  if (!c) return null;
+  return c.mode === 'auto' ? c.url(r.query, r.type) : c.page;
+}
+
+if (typeof module !== 'undefined') module.exports = { detect: detect, parseNumbers: parseNumbers, isoCheckDigit: isoCheckDigit, linkFor: linkFor, CARRIERS: CARRIERS };
+</script>
+
+<script id="i18n">
+var I18N = {
+  en: {
+    docTitle: 'Carrier Tracker',
+    appName: 'Carrier Tracker',
+    tag: 'ONE-CLICK LOOKUP',
+    bandMeta: 'MBL / container no. → carrier detected → official site',
+    inputLabel: 'Enter an MBL or container number',
+    keys: '<kbd>Enter</kbd> open · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>/</kbd> back to input',
+    placeholder: 'Paste a number. Separate several with line breaks, spaces or commas.',
+    clear: 'Clear',
+    logTitle: 'Recent lookups',
+    regTitle: 'Carriers',
+    th1: 'Carrier', th2: 'Detected by', th3: 'How it opens',
+    lessorFine: 'Leased boxes (TGHU, TCNU, TEMU, etc.) don\'t reveal the carrier. Pick one once and it will be remembered.',
+    prefIntro: 'Opening animation',
+    prefPaste: 'Open the carrier site on paste (only when the carrier is certain)',
+    replay: 'Replay animation',
+    privacy: 'Lookups happen on the carriers\' own sites. This page only detects and redirects; numbers and history stay in your browser.',
+    framedNote: 'In this online preview the browser blocks "open on paste". It works in the downloaded local file; here, press Enter or click the button.',
+    skip: 'Skip ›',
+    idleLead: 'Results appear here, for example:',
+    type_container: 'Container no.', type_bl: 'B/L no.', type_booking: 'Booking no.', type_maybe: 'Container or B/L', type_unknown: 'Unknown format',
+    chkOk: 'Check digit OK',
+    chkBad: 'Check digit wrong, should be {d}',
+    chkMaybe: 'Check digit mismatch, may be a B/L no.',
+    checkDigit: 'Check digit',
+    guess: 'Best guess', manual: 'Chosen manually',
+    other: '{name} (not supported yet)', lessor: 'Leased box', unknownCarrier: 'Carrier not detected',
+    note_short: 'Too short to be a B/L or container number.',
+    note_lessor: 'This box belongs to a leasing company, so the number doesn\'t show the carrier. Pick a carrier to open; your choice will be remembered.',
+    note_other: 'Detected as {name}, which isn\'t in the carrier list yet. You can pick a carrier manually.',
+    note_none: 'Couldn\'t tell the carrier from the format. Please pick one.',
+    note_guess9: 'Digits only (9–10): probably a Maersk B/L or booking number.',
+    note_guess8: 'Digits only (8): probably a Hapag-Lloyd booking number.',
+    note_guessCma: '3 letters + 7 digits: probably a CMA CGM B/L number.',
+    goAuto: 'Track on {name}', goCopy: 'Copy number & open {name}',
+    goAutoSm: 'Track', goCopySm: 'Copy & open',
+    copyAlt: 'Copy without prefix: {n}',
+    changeCarrier: 'Wrong carrier? Change it',
+    changeTo: 'Change to:', pickOpen: 'Open with:', pickCarrier: 'Choose carrier:',
+    batchHead: '<strong>{n}</strong> numbers, <strong>{k}</strong> recognized. Browsers open only one new tab per click, so open them one by one.',
+    openNext: 'Open next', opened: 'Opened',
+    allOpened: 'All recognized numbers have been opened.',
+    toastAuto: 'Opened {name}. The number is on your clipboard too.',
+    toastNoInput: 'Enter or paste a number first.',
+    toastNoCarrier: 'Carrier not set yet. Pick one below.',
+    toastBlocked: 'The browser blocked the new tab. Press Enter or click the button below.',
+    toastCopied: 'Copied {n}',
+    toastReduced: 'Reduced motion is turned on in your system settings, so the animation won\'t play.',
+    logEmpty: 'No lookups yet. Try the sample numbers below to see detection at work. They are made up; the last two show a wrong check digit and a digits-only B/L.',
+    fillTitle: 'Put in the input box', clearLog: 'Clear history',
+    reg_cntr: 'Container', reg_bl: 'B/L', reg_blStarts: 'starts with {p}', reg_other: 'Other',
+    rule_maersk: 'digits only, 9–10 (guess)', rule_hapag: '8-digit booking no. (guess)', rule_cma: '3 letters + 7 digits (guess)',
+    mode_auto: 'Opens and searches', mode_unverified: 'Auto-fill (unverified)', mode_copy: 'Copy, then paste',
+    hint_maersk: 'The site fills in the number and runs the search for you.',
+    hint_hapag: 'Tries to fill in the number for you. The site may show a security check first; if the box is empty afterwards, press Ctrl+V.',
+    hint_cma: 'This site can\'t take the number from a link. It\'s copied: press Ctrl+V in the search box, then click Search.',
+    hint_msc: 'This site can\'t take the number from a link. It\'s copied: choose Container/Bill of Lading Number, then press Ctrl+V.',
+    hint_wanhai: 'This site can\'t take the number from a link. It\'s copied: choose the search type in the dropdown, then press Ctrl+V.',
+    name_wanhai: 'Wan Hai'
+  },
+  ja: {
+    docTitle: 'ワンクリック船社追跡',
+    appName: 'ワンクリック船社追跡',
+    tag: 'CARRIER TRACKER',
+    bandMeta: 'MBL・コンテナ番号 → 船社を自動判別 → 公式サイトへ',
+    inputLabel: 'MBL番号またはコンテナ番号を入力',
+    keys: '<kbd>Enter</kbd> で開く · <kbd>Shift</kbd>+<kbd>Enter</kbd> で改行 · <kbd>/</kbd> で入力欄へ',
+    placeholder: '番号を貼り付けてください。複数の場合は改行・スペース・カンマで区切ります。',
+    clear: 'クリア',
+    logTitle: '最近の検索',
+    regTitle: '対応船社',
+    th1: '船社', th2: '判別ルール', th3: '開き方',
+    lessorFine: 'リース会社のコンテナ（TGHU、TCNU、TEMU など）は番号から船社を判別できません。一度選べば次回から記憶します。',
+    prefIntro: '起動アニメーション',
+    prefPaste: '貼り付けたらすぐ公式サイトを開く（船社が確定した場合のみ）',
+    replay: 'アニメーションを再生',
+    privacy: '検索は各船社の公式サイトで行われます。このページは判別とページ移動だけを行い、番号と履歴はお使いのブラウザ内にのみ保存されます。',
+    framedNote: 'オンラインプレビューでは「貼り付けたらすぐ開く」がブラウザにブロックされます。ダウンロードしたローカル版では動作します。ここでは Enter かボタンを押してください。',
+    skip: 'スキップ ›',
+    idleLead: '判別結果はここに表示されます。例：',
+    type_container: 'コンテナ番号', type_bl: 'B/L番号', type_booking: 'ブッキング番号', type_maybe: 'コンテナ番号またはB/L番号', type_unknown: '形式不明',
+    chkOk: 'チェックデジット正常',
+    chkBad: 'チェックデジット不一致（正しくは {d}）',
+    chkMaybe: 'チェックデジット不一致。B/L番号の可能性あり',
+    checkDigit: 'チェックデジット',
+    guess: '推定', manual: '手動選択',
+    other: '{name}（未対応）', lessor: 'リースコンテナ', unknownCarrier: '船社を判別できません',
+    note_short: '桁数が少なく、B/L番号やコンテナ番号ではなさそうです。',
+    note_lessor: 'リース会社のコンテナのため、番号から船社を判別できません。船社を選んで開いてください。選択内容は記憶されます。',
+    note_other: '{name} と判別しましたが、まだ対応船社に入っていません。船社を手動で選べます。',
+    note_none: '形式から船社を判別できませんでした。船社を選んでください。',
+    note_guess9: '数字のみ9〜10桁のため、Maersk のB/L番号またはブッキング番号と推定しました。',
+    note_guess8: '数字のみ8桁のため、Hapag-Lloyd のブッキング番号と推定しました。',
+    note_guessCma: '英字3桁＋数字7桁のため、CMA CGM のB/L番号と推定しました。',
+    goAuto: '{name} の公式サイトで検索', goCopy: '番号をコピーして {name} を開く',
+    goAutoSm: '検索', goCopySm: 'コピーして開く',
+    copyAlt: '接頭辞なしでコピー：{n}',
+    changeCarrier: '船社が違う場合は変更',
+    changeTo: '変更先：', pickOpen: '開く船社を選択：', pickCarrier: '船社を選択：',
+    batchHead: '全 <strong>{n}</strong> 件、うち <strong>{k}</strong> 件を判別しました。ブラウザは1クリックで1タブしか開けないため、順番に開いてください。',
+    openNext: '次を開く', opened: '表示済み',
+    allOpened: '判別できた番号はすべて開きました。',
+    toastAuto: '{name} を開きました。番号もコピー済みです。',
+    toastNoInput: '先に番号を入力するか貼り付けてください。',
+    toastNoCarrier: '船社が未確定です。下から選んでください。',
+    toastBlocked: 'ブラウザが新しいタブをブロックしました。Enter を押すか、下のボタンをクリックしてください。',
+    toastCopied: '{n} をコピーしました',
+    toastReduced: 'OS の「動きを減らす」設定がオンのため、アニメーションは再生されません。',
+    logEmpty: 'まだ検索履歴はありません。下のサンプル番号で判別の様子を試せます。架空の番号で、最後の2つはチェックデジットの誤りと数字のみのB/L番号の例です。',
+    fillTitle: '入力欄に入れる', clearLog: '履歴を消去',
+    reg_cntr: 'コンテナ', reg_bl: 'B/L', reg_blStarts: '{p} で始まる', reg_other: 'その他',
+    rule_maersk: '数字のみ9〜10桁（推定）', rule_hapag: '8桁のブッキング番号（推定）', rule_cma: '英字3桁＋数字7桁（推定）',
+    mode_auto: '自動で検索', mode_unverified: '自動入力（未検証）', mode_copy: 'コピーして貼り付け',
+    hint_maersk: '公式サイトで番号が自動入力され、そのまま検索されます。',
+    hint_hapag: '番号の自動入力を試みます。先にセキュリティチェックが表示されることがあります。その後、入力欄が空なら Ctrl+V で貼り付けてください。',
+    hint_cma: 'このサイトはリンクで番号を受け取れません。番号はコピー済みなので、入力欄で Ctrl+V を押して Search をクリックしてください。',
+    hint_msc: 'このサイトはリンクで番号を受け取れません。番号はコピー済みです。Container/Bill of Lading Number を選んでから Ctrl+V で貼り付けてください。',
+    hint_wanhai: 'このサイトはリンクで番号を受け取れません。番号はコピー済みです。プルダウンで検索種別を選んでから Ctrl+V で貼り付けてください。',
+    name_wanhai: 'Wan Hai（萬海）'
+  },
+  zh: {
+    docTitle: '船社追踪一键查',
+    appName: '船社追踪一键查',
+    tag: 'CARRIER TRACKER',
+    bandMeta: 'MBL / 箱号 → 自动识别船社 → 打开官网',
+    inputLabel: '输入 MBL 号或箱号',
+    keys: '<kbd>Enter</kbd> 打开 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行 · <kbd>/</kbd> 回到输入框',
+    placeholder: '粘贴单号即可，多个单号用换行、空格或逗号隔开',
+    clear: '清空',
+    logTitle: '最近查询',
+    regTitle: '常用船社',
+    th1: '船社', th2: '识别依据', th3: '打开方式',
+    lessorFine: '租赁公司的箱子（TGHU、TCNU、TEMU 等）看不出承运船社，识别后手动选一次，之后会记住。',
+    prefIntro: '开屏动画',
+    prefPaste: '粘贴后直接打开官网（仅限识别确定时）',
+    replay: '重播动画',
+    privacy: '查询都在船社官网完成。这个页面只负责识别和跳转，单号和查询记录只保存在你自己的浏览器里。',
+    framedNote: '在线预览里浏览器会拦截“粘贴后直接打开”，这个选项在下载的本地版里生效；预览里按 Enter 或点按钮即可。',
+    skip: '跳过 ›',
+    idleLead: '识别结果会显示在这里，例如：',
+    type_container: '箱号', type_bl: '提单号', type_booking: '订舱号', type_maybe: '箱号或提单号', type_unknown: '格式未知',
+    chkOk: '校验位正确',
+    chkBad: '校验位不符，应为 {d}',
+    chkMaybe: '校验位不符，也可能是提单号',
+    checkDigit: '校验位',
+    guess: '推测', manual: '手动指定',
+    other: '{name}（暂未收录）', lessor: '租赁箱', unknownCarrier: '未识别船社',
+    note_short: '位数太短，不像提单号或箱号。',
+    note_lessor: '这是租赁公司的箱子，箱号看不出承运船社。请选一家船社打开，选过的会记住。',
+    note_other: '识别为 {name}，还没加入常用船社列表。可以手动选一家打开。',
+    note_none: '没能从格式判断船社，请手动选择。',
+    note_guess9: '9–10 位纯数字，推测是 Maersk 的提单号或订舱号。',
+    note_guess8: '8 位纯数字，推测是 Hapag-Lloyd 的订舱号。',
+    note_guessCma: '3 个字母加 7 位数字，推测是 CMA CGM 的提单号。',
+    goAuto: '在 {name} 官网查询', goCopy: '复制单号并打开 {name}',
+    goAutoSm: '查询', goCopySm: '复制并打开',
+    copyAlt: '复制不带前缀：{n}',
+    changeCarrier: '不是这家？改选船社',
+    changeTo: '改为：', pickOpen: '用哪家打开：', pickCarrier: '选择船社：',
+    batchHead: '共 <strong>{n}</strong> 个单号，已识别 <strong>{k}</strong> 个。浏览器一次只允许打开一个新标签页，请逐个打开。',
+    openNext: '打开下一个', opened: '已打开',
+    allOpened: '已识别的单号都打开过了。',
+    toastAuto: '已打开 {name}，单号也复制好了。',
+    toastNoInput: '先输入或粘贴一个单号。',
+    toastNoCarrier: '还没确定船社，请在下面选一家。',
+    toastBlocked: '浏览器拦截了自动打开，按 Enter 或点下面的按钮即可。',
+    toastCopied: '已复制 {n}',
+    toastReduced: '系统开启了“减少动态效果”，动画不会播放。',
+    logEmpty: '还没有查询记录。点下面的示例单号看看识别效果（虚构号码，只用来演示，最后两个分别演示校验位出错和纯数字提单号）。',
+    fillTitle: '填入输入框', clearLog: '清空记录',
+    reg_cntr: '箱号', reg_bl: '提单', reg_blStarts: '{p} 开头', reg_other: '其他',
+    rule_maersk: '9–10 位纯数字（推测）', rule_hapag: '8 位纯数字订舱号（推测）', rule_cma: '3 字母 + 7 数字（推测）',
+    mode_auto: '自动查询', mode_unverified: '自动带入（待验证）', mode_copy: '复制单号后粘贴',
+    hint_maersk: '官网会自动带入单号并查询。',
+    hint_hapag: '会尝试自动带入单号。官网偶尔先弹安全验证，过了之后如果输入框是空的，按 Ctrl+V 粘贴即可。',
+    hint_cma: '官网不支持网址带单号。单号已复制，在输入框按 Ctrl+V，再点 Search。',
+    hint_msc: '官网不支持网址带单号。单号已复制，选 Container/Bill of Lading Number 后按 Ctrl+V 查询。',
+    hint_wanhai: '官网不支持网址带单号。单号已复制，先在下拉框选好查询类型，再按 Ctrl+V 查询。',
+    name_wanhai: 'Wan Hai 万海'
+  }
+};
+var OTHER_ZH = { Evergreen: '长荣', COSCO: '中远海运', 'Yang Ming': '阳明', SITC: '海丰' };
+</script>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  var prefs = Object.assign({ intro: true, autoPaste: true, lang: 'en' }, store.get('ct.prefs', {}));
+  if (!I18N[prefs.lang]) prefs.lang = 'en';
+  var history = store.get('ct.history', []);
+  if (!Array.isArray(history)) history = [];
+  var overrides = store.get('ct.overrides', {}) || {};
+  var opened = {};
+  var results = [];
+
+  var q = $('#q'), readout = $('#readout');
+  var EXAMPLES = ['MRKU4821076', 'HLXU2310542', 'CMAU7302917', 'MSCU7351024', 'WHLU5590317', 'TGHU8820148', 'MSKU1234567', '251234567'];
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function t(key, vars) {
+    var s = (I18N[prefs.lang] && I18N[prefs.lang][key]) || I18N.en[key] || key;
+    if (vars) s = s.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
+    return s;
+  }
+  function cName(c) { return c.id === 'wanhai' ? t('name_wanhai') : c.name; }
+  function otherName(n) { return prefs.lang === 'zh' && OTHER_ZH[n] ? n + ' ' + OTHER_ZH[n] : n; }
+
+  /* ---------- clipboard + toast ---------- */
+  function copyText(text) {
+    var fallback = function () {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '-1000px';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      } catch (e) {}
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(fallback);
+      else fallback();
+    } catch (e) { fallback(); }
+  }
+  var toastTimer;
+  function toast(msg) {
+    var el = $('#toast'); el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4200);
+  }
+
+  /* ---------- small renderers ---------- */
+  function boxHTML(c, sm) {
+    return '<span class="box' + (sm ? ' sm' : '') + '" style="--c:' + (c ? c.color : 'var(--c-none)') + '"></span>';
+  }
+  function numHTML(r, sm) {
+    var n = esc(r.num);
+    if (r.type === 'container' || r.type === 'maybe') {
+      return '<span class="num' + (sm ? ' sm' : '') + '"><span>' + n.slice(0, 4) + '</span><span>' + n.slice(4, 10) +
+        '</span><span class="cd' + (r.check === false ? ' bad' : '') + '" title="' + esc(t('checkDigit')) + '">' + n[10] + '</span></span>';
+    }
+    return '<span class="num' + (sm ? ' sm' : '') + '">' + n + '</span>';
+  }
+  function pillsHTML(r) {
+    var out = ['<span class="pill">' + esc(t('type_' + r.type)) + '</span>'];
+    if (r.type === 'container' && r.check === true) out.push('<span class="pill ok">' + esc(t('chkOk')) + '</span>');
+    if (r.type === 'container' && r.check === false) out.push('<span class="pill bad">' + esc(t('chkBad', { d: r.expected })) + '</span>');
+    if (r.type === 'maybe') out.push('<span class="pill warn">' + esc(t('chkMaybe')) + '</span>');
+    if (r.conf === 'guess') out.push('<span class="pill warn">' + esc(t('guess')) + '</span>');
+    if (r.conf === 'manual') out.push('<span class="pill">' + esc(t('manual')) + '</span>');
+    return '<span class="pills">' + out.join('') + '</span>';
+  }
+  function carrierName(r) {
+    var c = CARRIERS[r.carrier];
+    if (c) return cName(c);
+    if (r.other) return t('other', { name: otherName(r.other) });
+    if (r.lessor) return t('lessor');
+    return t('unknownCarrier');
+  }
+  function noteText(r) {
+    if (r.note === 'short') return t('note_short');
+    if (r.lessor && !r.carrier) return t('note_lessor');
+    if (r.other && !r.carrier) return t('note_other', { name: otherName(r.other) });
+    if (!r.carrier) return t('note_none');
+    if (r.note && r.conf === 'guess') return t('note_' + r.note);
+    return '';
+  }
+  function chipsHTML(r, label) {
+    var h = '<div class="chips" data-for="' + esc(r.num) + '"><span class="lbl">' + esc(label) + '</span>';
+    for (var i = 0; i < ORDER.length; i++) {
+      var c = CARRIERS[ORDER[i]];
+      h += '<button type="button" class="chip" data-pick="' + c.id + '">' + boxHTML(c, true) + esc(cName(c)) + '</button>';
+    }
+    return h + '</div>';
+  }
+  function goHTML(r, small) {
+    var c = CARRIERS[r.carrier], href = linkFor(r);
+    if (!c || !href) return '';
+    var key = c.mode === 'auto' ? (small ? 'goAutoSm' : 'goAuto') : (small ? 'goCopySm' : 'goCopy');
+    return '<a class="btn ' + (small ? 'small ' : '') + 'primary" data-go="' + esc(r.num) + '" data-carrier="' + c.id +
+      '" href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(t(key, { name: cName(c) })) + ' <span class="arrow">↗</span></a>';
+  }
+
+  /* ---------- readout ---------- */
+  function render() {
+    var nums = parseNumbers(q.value);
+    results = nums.map(function (n) { return detect(n, overrides[n]); });
+    if (!nums.length) return renderIdle();
+    if (nums.length === 1) return renderSingle(results[0]);
+    renderBatch(results);
+  }
+
+  function renderIdle() {
+    readout.innerHTML =
+      '<div class="idle"><span>' + esc(t('idleLead')) + '</span>' +
+      '<div class="demo">' + numHTML({ num: 'MRKU4821076', type: 'container', check: true }) +
+      '<span class="to">→</span><span class="badge">' + boxHTML(CARRIERS.maersk) + '<strong>Maersk</strong></span>' +
+      '<span class="pill ok">' + esc(t('chkOk')) + '</span></div></div>';
+  }
+
+  function renderSingle(r) {
+    var c = CARRIERS[r.carrier];
+    var h = '<div class="ro-head"><span class="badge">' + boxHTML(c) + '<span class="ro-name">' + esc(carrierName(r)) + '</span></span>' +
+      pillsHTML(r) + '</div>';
+    h += numHTML(r);
+    var note = noteText(r);
+    if (note) h += '<p class="ro-note">' + esc(note) + '</p>';
+    if (c) {
+      h += '<div class="ro-actions">' + goHTML(r) +
+        (r.alt ? '<button type="button" class="btn ghost small" data-copy="' + esc(r.alt) + '">' + esc(t('copyAlt', { n: r.alt })) + '</button>' : '') +
+        '<button type="button" class="linkish" data-toggle-chips>' + esc(t('changeCarrier')) + '</button></div>';
+      h += '<p class="ro-hint ' + c.mode + '">' + esc(t('hint_' + c.id)) + '</p>';
+      h += '<div data-chips-slot hidden>' + chipsHTML(r, t('changeTo')) + '</div>';
+    } else if (r.note !== 'short') {
+      h += chipsHTML(r, t('pickOpen'));
+    }
+    readout.innerHTML = h;
+  }
+
+  function renderBatch(list) {
+    var known = list.filter(function (r) { return r.carrier; }).length;
+    var h = '<div class="batch-head"><p>' + t('batchHead', { n: list.length, k: known }) + '</p>' +
+      '<button type="button" class="btn primary small" id="nextBtn">' + esc(t('openNext')) + ' <span class="arrow">↗</span></button></div><ul class="rows">';
+    list.forEach(function (r) {
+      var c = CARRIERS[r.carrier];
+      h += '<li class="row' + (opened[r.num] ? ' opened' : '') + '" data-num="' + esc(r.num) + '">' +
+        '<div class="who">' + numHTML(r, true) + pillsHTML(r) + '</div>' +
+        '<div class="name">' + boxHTML(c, true) + '<span>' + esc(carrierName(r)) + '</span></div>' +
+        '<div class="act">' + (opened[r.num] ? '<span class="done-mark">' + esc(t('opened')) + '</span>' : '') + goHTML(r, true) + '</div>' +
+        (!c && r.note !== 'short' ? chipsHTML(r, t('pickCarrier')) : '') +
+        '</li>';
+    });
+    readout.innerHTML = h + '</ul>';
+  }
+
+  /* ---------- open / history ---------- */
+  function afterOpen(r) {
+    var c = CARRIERS[r.carrier];
+    copyText(r.query);
+    opened[r.num] = true;
+    history = history.filter(function (h) { return h.n !== r.num; });
+    history.unshift({ n: r.num, c: r.carrier, t: Date.now() });
+    history = history.slice(0, 30);
+    store.set('ct.history', history);
+    renderLog();
+    toast(c.mode === 'auto' ? t('toastAuto', { name: cName(c) }) : t('hint_' + c.id));
+    if (results.length > 1) setTimeout(render, 50);
+  }
+
+  function resultFromLink(a) {
+    var num = a.getAttribute('data-go'), cid = a.getAttribute('data-carrier');
+    var r = detect(num, overrides[num] || cid);
+    if (r.carrier !== cid) r = detect(num, cid);
+    return r;
+  }
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-go]');
+    if (a) { afterOpen(resultFromLink(a)); return; }
+
+    var pick = e.target.closest('[data-pick]');
+    if (pick) {
+      var num = pick.closest('[data-for]').getAttribute('data-for');
+      overrides[num] = pick.getAttribute('data-pick');
+      var keys = Object.keys(overrides);
+      if (keys.length > 200) delete overrides[keys[0]];
+      store.set('ct.overrides', overrides);
+      render();
+      return;
+    }
+    if (e.target.closest('[data-toggle-chips]')) {
+      var slot = readout.querySelector('[data-chips-slot]');
+      if (slot) slot.hidden = !slot.hidden;
+      return;
+    }
+    var cp = e.target.closest('[data-copy]');
+    if (cp) { copyText(cp.getAttribute('data-copy')); toast(t('toastCopied', { n: cp.getAttribute('data-copy') })); return; }
+
+    if (e.target.closest('#nextBtn')) { openNext(); return; }
+
+    var fill = e.target.closest('[data-fill]');
+    if (fill) { q.value = fill.getAttribute('data-fill'); autosize(); render(); q.focus(); return; }
+
+    var lb = e.target.closest('[data-lang]');
+    if (lb) { setLang(lb.getAttribute('data-lang')); return; }
+  });
+
+  function openNext() {
+    var links = readout.querySelectorAll('a[data-go]');
+    for (var i = 0; i < links.length; i++) {
+      if (!opened[links[i].getAttribute('data-go')]) { links[i].click(); return; }
+    }
+    toast(t('allOpened'));
+  }
+
+  /* ---------- input behaviour ---------- */
+  function autosize() { q.style.height = 'auto'; q.style.height = Math.min(q.scrollHeight + 4, 260) + 'px'; }
+  q.addEventListener('input', function () { autosize(); render(); });
+
+  q.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      if (!results.length) { toast(t('toastNoInput')); return; }
+      if (results.length === 1) {
+        var a = readout.querySelector('a[data-go]');
+        if (a) a.click(); else toast(t('toastNoCarrier'));
+      } else openNext();
+    } else if (e.key === 'Escape') {
+      q.value = ''; autosize(); render();
+    }
+  });
+
+  var framed = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
+  $('#framedNote').hidden = !framed;
+
+  q.addEventListener('paste', function (e) {
+    if (!prefs.autoPaste || framed) return;
+    var text = (e.clipboardData && e.clipboardData.getData('text')) || '';
+    var replacesAll = !q.value.trim() || (q.selectionStart === 0 && q.selectionEnd === q.value.length);
+    if (!replacesAll) return;
+    var nums = parseNumbers(text);
+    if (nums.length !== 1) return;
+    var r = detect(nums[0], overrides[nums[0]]);
+    if (!r.carrier || (r.conf !== 'sure' && r.conf !== 'manual')) return;
+    var w = null;
+    try { w = window.open(linkFor(r), '_blank'); } catch (err) { w = null; }
+    if (w) {
+      try { w.opener = null; } catch (err2) {}
+      afterOpen(r);
+    } else {
+      setTimeout(function () { toast(t('toastBlocked')); }, 60);
+    }
+  });
+
+  $('#clearBtn').addEventListener('click', function () { q.value = ''; autosize(); render(); q.focus(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== q && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) {
+      e.preventDefault(); q.focus();
+    }
+  });
+
+  /* ---------- register + log ---------- */
+  function renderRegister() {
+    var h = '';
+    ORDER.forEach(function (id) {
+      var c = CARRIERS[id];
+      var mode = c.mode === 'copy' ? '<span class="pill">' + esc(t('mode_copy')) + '</span>'
+        : c.verified ? '<span class="pill ok">' + esc(t('mode_auto')) + '</span>' : '<span class="pill warn">' + esc(t('mode_unverified')) + '</span>';
+      h += '<tr><td><span class="cname">' + boxHTML(c, true) + esc(cName(c)) + '</span></td>' +
+        '<td class="prefixes"><b>' + esc(t('reg_cntr')) + '</b> ' + c.cntr.join(' ') +
+        '<br><b>' + esc(t('reg_bl')) + '</b> <span>' + esc(t('reg_blStarts', { p: c.scac.join(' / ') })) + '</span>' +
+        (c.hasRule ? '<br><b>' + esc(t('reg_other')) + '</b> <span>' + esc(t('rule_' + id)) + '</span>' : '') +
+        '</td><td>' + mode + '</td></tr>';
+    });
+    $('#regBody').innerHTML = h;
+  }
+
+  function fmtTime(ts) {
+    var d = new Date(ts), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function renderLog() {
+    var box = $('#logBox');
+    if (!history.length) {
+      var chips = EXAMPLES.map(function (n) { return '<button type="button" class="chip mono" data-fill="' + n + '">' + n + '</button>'; }).join('');
+      box.innerHTML = '<div class="log-empty"><span>' + esc(t('logEmpty')) + '</span><div class="chips">' + chips + '</div></div>';
+      return;
+    }
+    var h = '<ul class="log">';
+    history.forEach(function (it) {
+      var r = detect(it.n, it.c), c = CARRIERS[r.carrier];
+      h += '<li><time>' + fmtTime(it.t) + '</time>' +
+        '<button type="button" class="lnum" data-fill="' + esc(it.n) + '" title="' + esc(t('fillTitle')) + '">' + esc(it.n) +
+        '<span class="lc">' + (c ? esc(cName(c)) : '') + '</span></button>' + goHTML(r, true) + '</li>';
+    });
+    box.innerHTML = h + '</ul><div class="log-tools"><button type="button" class="linkish" id="clearLog">' + esc(t('clearLog')) + '</button></div>';
+    $('#clearLog').addEventListener('click', function () { history = []; store.set('ct.history', history); renderLog(); });
+  }
+
+  /* ---------- language ---------- */
+  function applyStatic() {
+    document.documentElement.lang = ({ en: 'en', ja: 'ja', zh: 'zh-CN' })[prefs.lang];
+    document.title = t('docTitle');
+    document.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t(el.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-html]').forEach(function (el) { el.innerHTML = t(el.getAttribute('data-i18n-html')); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(function (el) { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
+    document.querySelectorAll('[data-lang]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === prefs.lang)); });
+  }
+  function setLang(l) {
+    if (!I18N[l] || l === prefs.lang) return;
+    prefs.lang = l; store.set('ct.prefs', prefs);
+    applyStatic(); renderRegister(); renderLog(); render();
+  }
+
+  /* ---------- prefs ---------- */
+  var pIntro = $('#prefIntro'), pPaste = $('#prefPaste');
+  pIntro.checked = prefs.intro; pPaste.checked = prefs.autoPaste;
+  pIntro.addEventListener('change', function () { prefs.intro = pIntro.checked; store.set('ct.prefs', prefs); });
+  pPaste.addEventListener('change', function () { prefs.autoPaste = pPaste.checked; store.set('ct.prefs', prefs); });
+
+  /* ---------- intro ---------- */
+  var intro = $('#intro');
+  (function buildStack() {
+    var ns = 'http://www.w3.org/2000/svg', g = $('#stack');
+    var tiers = [[93, 78, 9], [76, 78, 8], [59, 106, 6]];
+    tiers.forEach(function (tr, ti) {
+      for (var i = 0; i < tr[2]; i++) {
+        var x = tr[1] + i * 28, k = ((ti * 3 + i * 5 + (i % 2) * 2) % 6) + 1;
+        var a = document.createElementNS(ns, 'rect');
+        a.setAttribute('x', x); a.setAttribute('y', tr[0]); a.setAttribute('width', 26); a.setAttribute('height', 15); a.setAttribute('rx', 1);
+        a.setAttribute('style', 'fill:var(--k' + k + ')');
+        var b = document.createElementNS(ns, 'rect');
+        b.setAttribute('x', x); b.setAttribute('y', tr[0]); b.setAttribute('width', 26); b.setAttribute('height', 15);
+        b.setAttribute('class', 'corr');
+        g.appendChild(a); g.appendChild(b);
+      }
+    });
+  })();
+
+  var introTimer = null;
+  function closeIntro() {
+    if (!document.documentElement.classList.contains('intro-on') || intro.classList.contains('done')) return;
+    clearTimeout(introTimer);
+    intro.classList.add('done');
+    document.removeEventListener('keydown', closeIntro, true);
+    setTimeout(function () { document.documentElement.classList.remove('intro-on'); intro.classList.remove('done'); }, 650);
+    try { q.focus({ preventScroll: true }); } catch (e) {}
+  }
+  function startIntro() {
+    document.documentElement.classList.add('intro-on');
+    intro.classList.remove('done');
+    var track = intro.querySelector('.ship-track');
+    track.style.animation = 'none'; void track.offsetWidth; track.style.animation = '';
+    var title = intro.querySelector('.title');
+    title.style.animation = 'none'; void title.offsetWidth; title.style.animation = '';
+    clearTimeout(introTimer);
+    introTimer = setTimeout(closeIntro, 3700);
+    setTimeout(function () { document.addEventListener('keydown', closeIntro, true); }, 0);
+  }
+  intro.addEventListener('click', closeIntro);
+  $('#replayIntro').addEventListener('click', function () {
+    var reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    if (reduce) { toast(t('toastReduced')); return; }
+    startIntro();
+  });
+
+  applyStatic();
+  renderRegister();
+  renderLog();
+  render();
+  if (document.documentElement.classList.contains('intro-on')) startIntro();
+  else q.focus({ preventScroll: true });
+})();
+</script>
+
+</body>
+</html>
